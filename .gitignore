@@ -1,0 +1,6 @@
+*.pyc
+__pycache__/
+*.pkl
+*.parquet
+.ipynb_checkpoints/
+sample_data/
