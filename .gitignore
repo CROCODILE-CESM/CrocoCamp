@@ -1,6 +1,13 @@
+# python files
 *.pyc
 __pycache__/
 *.pkl
 *.parquet
 .ipynb_checkpoints/
 sample_data/
+
+# perfect_model_obs log and nml
+dart_log.nml
+dart_log.out
+input.nml
+input.nml.backup
