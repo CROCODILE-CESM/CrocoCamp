@@ -1,0 +1,18 @@
+# Configuration file to loop over perfect_model_obs
+
+# Input directory containing model .nc files to process
+model_in_folder: /home/username/work/perfect_model_obs_kate/in_mom6/
+
+# Model configuration files (must be .nc files)
+template_file: /home/username/work/perfect_model_obs_kate/in_mom6/0119-01-02.nc
+static_file: /home/username/work/perfect_model_obs_kate/reference_nc/g.e30_b06.G_JRA.TL319_t232_zstar_N75.2025.SKEB_DA.stochastic.mom6.h.static.nc
+ocean_geometry:  /home/username/work/perfect_model_obs_kate/reference_nc/g.e30_b06.G_JRA.TL319_t232_zstar_N75.2025.SKEB_DA.stochastic.mom6.h.ocean_geometry.nc
+
+# Directory containing observation files
+obs_in_folder: /work/emilanese/perfect_model_obs_kate/in_obs/
+
+# Output directory for processed files (will be created if it doesn't exist)
+output_folder: /work/emilanese/perfect_model_obs_kate/out/
+input_nml_bck: /work/emilanese/perfect_model_obs_kate/input_bckp
+trimmed_obs_folder: /work/emilanese/perfect_model_obs_kate/trimmed_obs_in
+parquet_folder: /work/emilanese/perfect_model_obs_kate/out_parquet/
