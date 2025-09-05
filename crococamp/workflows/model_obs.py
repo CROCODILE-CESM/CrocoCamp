@@ -12,8 +12,8 @@ import pydartdiags.obs_sequence.obs_sequence as obsq
 import xarray as xr
 
 from ..io.file_utils import get_sorted_files, get_model_time_in_days_seconds, get_obs_time_in_days_seconds
-from ..io.model_grid import get_model_boundaries
-from ..io.obs_seq import trim_obs_seq_in
+from ..io.model_tools import get_model_boundaries
+from ..io.obs_seq_tools import trim_obs_seq_in
 from ..utils.config import (
     check_directory_not_empty, check_nc_files_only, check_or_create_folder,
     check_nc_file

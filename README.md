@@ -74,8 +74,6 @@ See the `examples/` and `configs/` folders for notebooks and reference configura
 - `examples/regridding_20250716.ipynb` - Model-model comparison workflow
 - `configs/config.yaml` - Example configuration file
 - `configs/input.nml` - Example DART namelist file
-- `regridding_20250716.ipynb` - Model-model comparison workflow
-- `config.yaml` - Example configuration file
 
 ---
 
