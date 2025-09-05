@@ -2,6 +2,7 @@
 
 import os
 import re
+import tempfile
 
 
 def read_namelist(file_path):
@@ -24,6 +25,39 @@ def write_namelist(file_path, content):
     except IOError as e:
         raise IOError(f"Could not write namelist file '{file_path}': {e}")
 
+
+def symlink_to_namelist(input_nml):
+    """Create a symbolic link to a namelist file."""
+    if not os.path.isfile(input_nml):
+        raise FileNotFoundError(f"Source namelist file '{input_nml}' does not exist")
+
+    try:
+        dest = os.path.join(os.getcwd(), "input.nml")
+        if dest == input_nml:
+            raise ValueError("Source and destination for symlink are the same.")
+        if os.path.islink(dest):
+            os.remove(dest)
+            print(f"Symlink '{dest}' removed.")
+        elif os.path.exists(dest):
+            raise ValueError(f"'{dest}' exists and is not a symlink. Not removing nor continuing execution.")
+        os.symlink(input_nml, dest)
+        print(f"Symlink {dest} -> '{input_nml}' created.")
+    except OSError as e:
+        raise OSError(f"Could not create symlink from '{input_nml}' to '{dest}': {e}")
+
+def cleanup_namelist_symlink():
+    """Remove the symbolic link to the namelist file."""
+    dest = os.path.join(os.getcwd(), "input.nml")
+    try:
+        if os.path.islink(dest):
+            os.remove(dest)
+            print(f"Symlink '{dest}' removed.")
+        elif os.path.exists(dest):
+            print(f"'{dest}' exists but is not a symlink. Not removing.")
+        else:
+            print(f"No symlink '{dest}' found to remove.")
+    except OSError as e:
+        raise OSError(f"Could not remove symlink '{dest}': {e}")
 
 def update_namelist_param(content, section, param, value, string=True):
     """Update a parameter in a namelist section."""

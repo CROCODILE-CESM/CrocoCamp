@@ -18,7 +18,7 @@ from ..utils.config import (
     check_directory_not_empty, check_nc_files_only, check_or_create_folder,
     check_nc_file
 )
-from ..utils.namelist import read_namelist, write_namelist, update_namelist_param
+from ..utils.namelist import read_namelist, write_namelist, update_namelist_param, symlink_to_namelist, cleanup_namelist_symlink
 
 
 def merge_pair_to_parquet(perf_obs_file, orig_obs_file, parquet_path):
@@ -187,6 +187,9 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
     template_file = config['template_file']
     static_file = config['static_file']
     ocean_geometry = config['ocean_geometry']
+    perfect_model_obs_dir = config['perfect_model_obs_dir']
+    input_nml = os.path.join(perfect_model_obs_dir, "input.nml")
+
     try:
         input_nml_bck = config['input_nml_bck']
     except:
@@ -203,6 +206,8 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
             trimmed_obs_folder = config['trimmed_obs_folder']
 
     print("Configuration:")
+    print(f"  perfect_model_obs_dir: {perfect_model_obs_dir}")
+    print(f"  input_nml: {input_nml}")
     print(f"  model_in_folder: {model_in_folder}")
     print(f"  obs_in_folder: {obs_in_folder}")
     print(f"  output_folder: {output_folder}")
@@ -228,6 +233,9 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
         print("Validating trimmed_obs_folder...")
         check_or_create_folder(trimmed_obs_folder, "trimmed_obs_folder")
 
+    print("Setting up symlink for input.nml...")
+    symlink_to_namelist(input_nml)
+
     print("Validating input_nml_bck...")
     check_or_create_folder(input_nml_bck, "input_nml_bck")
 
@@ -239,13 +247,13 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
     print("Checking input.nml...")
     # Create backup of input.nml
     try:
-        shutil.copy2("input.nml", "input.nml.backup")
+        shutil.copy2(input_nml, "input.nml.backup")
         print("Created backup: input.nml.backup")
     except IOError as e:
         raise IOError(f"Could not create backup of input.nml: {e}")
 
     # Read and update namelist
-    namelist_content = read_namelist("input.nml")
+    namelist_content = read_namelist(input_nml)
 
     print("Updating &model_nml section...")
     namelist_content = update_namelist_param(
@@ -331,6 +339,9 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
                             if snapshots_nb > 1:
                                 os.remove(tmp_model_in_file)
 
+    # remove temporay symbolic link to input.nml
+    cleanup_namelist_symlink()
+
     return len(model_in_files)
 
 
@@ -344,6 +355,8 @@ def process_model_obs_pair(config, model_in_file, obs_in_file, trim_obs, counter
     ocean_geometry = config['ocean_geometry']
     input_nml_bck = config.get('input_nml_bck', 'input.nml.backup')
     trimmed_obs_folder = config.get('trimmed_obs_folder', 'trimmed_obs_seq')
+    perfect_model_obs_dir = config['perfect_model_obs_dir']
+    input_nml = os.path.join(perfect_model_obs_dir, "input.nml")
 
     model_in_filename = os.path.basename(model_in_file)
     obs_in_filename = os.path.basename(obs_in_file)
@@ -409,7 +422,7 @@ def process_model_obs_pair(config, model_in_file, obs_in_file, trim_obs, counter
         )
 
     # Write updated namelist
-    write_namelist("input.nml", namelist_content)
+    write_namelist(input_nml, namelist_content)
     input_nml_bck_path = os.path.join(input_nml_bck, f"input.nml_{file_number}.backup")
     write_namelist(input_nml_bck_path, namelist_content)
     print("input.nml modified.")
@@ -417,8 +430,7 @@ def process_model_obs_pair(config, model_in_file, obs_in_file, trim_obs, counter
 
     # Call perfect_model_obs
     print("Calling perfect_model_obs...")
-    current_dir = os.path.dirname(__file__)
-    perfect_model_obs = os.path.join(current_dir, "perfect_model_obs")
+    perfect_model_obs = os.path.join(perfect_model_obs_dir, "perfect_model_obs")
     process = subprocess.Popen(
         [perfect_model_obs],
         stdout=subprocess.PIPE,  # Capture stdout

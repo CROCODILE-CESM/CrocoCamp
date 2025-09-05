@@ -75,7 +75,8 @@ Examples:
         # Read and validate config
         config = read_config(config_file)
         required_keys = ['model_in_folder', 'obs_in_folder', 'output_folder',
-                         'template_file', 'static_file', 'ocean_geometry']
+                         'template_file', 'static_file', 'ocean_geometry',
+                         'perfect_model_obs_dir', 'parquet_folder']
 
         validate_config_keys(config, required_keys)
 
