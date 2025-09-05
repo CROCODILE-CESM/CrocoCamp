@@ -126,6 +126,7 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
 
     print(f"Found {len(model_in_files)} files to process")
 
+    hull_polygon, hull_points = None, None
     if trim_obs:
         # Get model boundaries
         print("Getting model boundaries...")
@@ -202,8 +203,8 @@ def process_model_obs_pair(config, model_in_file, obs_in_file, trim_obs, counter
     template_file = config['template_file']
     static_file = config['static_file']
     ocean_geometry = config['ocean_geometry']
-    input_nml_bck = config['input_nml_bck']
-    trimmed_obs_folder = config['trimmed_obs_folder']
+    input_nml_bck = config.get('input_nml_bck', 'input.nml.backup')
+    trimmed_obs_folder = config.get('trimmed_obs_folder', 'trimmed_obs_seq')
 
     model_in_filename = os.path.basename(model_in_file)
     obs_in_filename = os.path.basename(obs_in_file)
