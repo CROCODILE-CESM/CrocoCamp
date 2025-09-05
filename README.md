@@ -54,47 +54,9 @@ perfect-model-obs -c config.yaml --no-matching
 perfect-model-obs -c config.yaml --parquet-only
 ```
 
-### Python API
-
-```python
-from crococamp.utils.config import read_config
-from crococamp.workflows.model_obs import process_files
-
-# Load configuration
-config = read_config('config.yaml')
-
-# Process model-observation pairs
-files_processed = process_files(
-    config, 
-    trim_obs=True,
-    no_matching=False
-)
-```
-
-### Module Usage
-
-```python
-# Configuration utilities
-from crococamp.utils.config import read_config, validate_config_keys
-config = read_config('config.yaml')
-
-# Namelist utilities  
-from crococamp.utils.namelist import read_namelist, update_namelist_param
-content = read_namelist('input.nml')
-updated = update_namelist_param(content, 'section', 'param', 'value')
-
-# File utilities
-from crococamp.io.file_utils import get_sorted_files
-files = get_sorted_files('/path/to/data', '*.nc')
-
-# Model grid operations
-from crococamp.io.model_grid import get_model_boundaries
-hull_polygon, hull_points = get_model_boundaries('ocean_geometry.nc')
-```
-
 ## Configuration
 
-Edit the provided `ref_files/config.yaml` to set your input, output, and model/obs paths:
+Edit the provided `configs/config.yaml` to set your input, output, and model/obs paths:
 
 ```yaml
 model_in_folder: /path/to/model/files/
@@ -105,14 +67,13 @@ static_file: /path/to/static.nc
 ocean_geometry: /path/to/ocean_geometry.nc
 ```
 
-## Migration from Legacy Script
-
-The monolithic script `ref_files/perfect_model_obs_split_loop.py` has been refactored into the modular structure. The functionality remains identical, but is now organized for better maintainability and reusability.
-
 ## Examples
 
-See the `ref_files/` folder for notebooks and reference configurations, including:
-- `model-obs-comparison-kate.ipynb` - Model-observation comparison examples
+See the `examples/` and `configs/` folders for notebooks and reference configurations, including:
+- `examples/model-obs-comparison-kate.ipynb` - Model-observation comparison examples
+- `examples/regridding_20250716.ipynb` - Model-model comparison workflow
+- `configs/config.yaml` - Example configuration file
+- `configs/input.nml` - Example DART namelist file
 - `regridding_20250716.ipynb` - Model-model comparison workflow
 - `config.yaml` - Example configuration file
 

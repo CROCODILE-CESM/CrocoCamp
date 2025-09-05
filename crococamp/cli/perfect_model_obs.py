@@ -3,9 +3,8 @@
 import argparse
 import sys
 
-from ..io.obs_seq import merge_model_obs_to_parquet
 from ..utils.config import read_config, validate_config_keys
-from ..workflows.model_obs import process_files
+from ..workflows.model_obs import process_files, merge_model_obs_to_parquet
 
 
 def main():

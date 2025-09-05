@@ -21,13 +21,7 @@ def get_model_boundaries(model_file, margin=0.0):
 
         # Remove points of rectangular grid where model was not run
         # (e.g. Pacific when modeling Atlantic)
-        # Assuming 'thetao' is a variable in the dataset that indicates valid
-        # points as it has yh, xh dimensions
-        # ref_var = ds['thetao'].values[0, 0, :, :]  # Shape: (len(yh), len(xh))
-        # valid_data = ~np.isnan(ref_var)
-        # valid_data = valid_data.flatten()
-        # xh_flat = xh_flat[valid_data]
-        # yh_flat = yh_flat[valid_data]
+        # Assuming 'wet' variable indicates valid points
         ref_var = ds['wet'].values  # Shape: (len(yh), len(xh))
         valid_data = ref_var==1
         valid_data = valid_data.flatten()
