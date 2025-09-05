@@ -13,11 +13,6 @@ def main():
     parser = argparse.ArgumentParser(
         description='Script to call perfect_model_obs on multiple model and obs_seq.in files.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python process_config.py config.yaml
-  python process_config.py /path/to/myconfig.yaml
-        """
     )
 
     parser.add_argument(

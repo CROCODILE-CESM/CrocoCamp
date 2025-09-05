@@ -4,6 +4,13 @@ import os
 import yaml
 
 
+def resolve_path(path, config_file):
+    """Resolve path to absolute, using config_file location as base for relative paths."""
+    if os.path.isabs(path):
+        return path
+    config_dir = os.path.dirname(os.path.abspath(config_file))
+    return os.path.abspath(os.path.join(config_dir, path))
+
 def read_config(config_file):
     """Read configuration from YAML file."""
     if not os.path.exists(config_file):
@@ -12,6 +19,11 @@ def read_config(config_file):
     try:
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
+
+        for key in config:
+            if isinstance(config[key], str):
+                config[key] = resolve_path(config[key], config_file)
+
         return config
     except yaml.YAMLError as e:
         raise ValueError(f"Error parsing YAML file: {e}")
