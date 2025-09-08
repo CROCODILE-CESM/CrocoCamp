@@ -2,8 +2,7 @@
 
 ####### DART #######
 # Path to DART's perfect model obs executable
-perfect_model_obs_dir: /glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work
- #/path/to/DART/models/MOM6/work
+perfect_model_obs_dir: #/path/to/DART/models/MOM6/work
 
 ####### INPUT FILES #######
 # Directory containing model .nc files to process
