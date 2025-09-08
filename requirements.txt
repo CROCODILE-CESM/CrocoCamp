@@ -1,4 +1,0 @@
-# Example requirements file
-xarray
-dask
-pandas
