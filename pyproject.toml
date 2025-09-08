@@ -7,14 +7,20 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.8"
 dependencies = [
-    "xarray",
+    "cartopy",
+    "cftime",
     "dask",
+    "ipykernel",
+    "ipywidgets",
+    "matplotlib",
     "pandas",
+    "pyarrow",
     "pyyaml",
-    "shapely",
     "scipy",
+    "shapely",
+    "xarray",
     "xesmf",
-    "xgcm"
+    "xgcm",
 ]
 
 [project.scripts]
@@ -26,4 +32,3 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["crococamp*"]
-exclude = ["ref_files*"]

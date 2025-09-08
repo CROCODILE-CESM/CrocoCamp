@@ -1,0 +1,25 @@
+# Configuration file for CrocoCamp tools
+
+####### DART #######
+# Path to DART's perfect model obs executable
+perfect_model_obs_dir: /glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work
+ #/path/to/DART/models/MOM6/work
+
+####### INPUT FILES #######
+# Directory containing model .nc files to process
+model_files_folder: /glade/u/home/emilanese/work/DATA/CrocoCamp/demo/in_mom6/
+
+# Model configuration files (must be .nc files)
+template_file: /glade/u/home/emilanese/work/DATA/CrocoCamp/demo/in_mom6/NWA_demo_01.nc
+static_file: /glade/u/home/emilanese/work/DATA/CrocoCamp/demo/in_mom6_ref/NWA-demo-static.nc
+ocean_geometry:  /glade/u/home/emilanese/work/DATA/CrocoCamp/demo/in_mom6_ref/NWA-demo-ocean_geometry.nc
+
+# Directory containing observation files
+obs_seq_in_folder: /glade/u/home/emilanese/work/DATA/CrocoCamp/demo/in_WOD/
+
+####### OUTPUT FILES #######
+# Output directory for processed files (will be created if it doesn't exist)
+output_folder: ./out_obs_seq_in/
+input_nml_bck: ./input_bckp
+trimmed_obs_folder: ./out_trimmed_obs_seq_in
+parquet_folder: ./out_parquet/

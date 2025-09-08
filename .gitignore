@@ -5,9 +5,14 @@ __pycache__/
 *.parquet
 .ipynb_checkpoints/
 sample_data/
+*.egg-info*
 
 # perfect_model_obs log and nml
 dart_log.nml
 dart_log.out
 input.nml
 input.nml.backup
+
+# demo's input and output folders
+demo/in*
+demo/out*

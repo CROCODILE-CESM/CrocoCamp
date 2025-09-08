@@ -121,7 +121,7 @@ def merge_model_obs_to_parquet(config, trim_obs):
     if trim_obs:
         obs_folder = config['trimmed_obs_folder']
     else:
-        obs_folder = config['obs_in_folder']
+        obs_folder = config['obs_seq_in_folder']
 
     print("Validating parquet_folder...")
     check_or_create_folder(parquet_folder, "parquet_folder")
@@ -162,8 +162,8 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
 
     Arguments:
     config -- Dictionary containing the following configuration parameters:
-        model_in_folder -- Path to the folder containing model input files
-        obs_in_folder   -- Path to the folder containing observation files in DART format
+        model_files_folder -- Path to the folder containing model input files
+        obs_seq_in_folder   -- Path to the folder containing observation files in DART format
         output_folder   -- Path to the folder where output files will be saved
         template_file   -- Path to the template .nc file
         static_file     -- Path to the static .nc file
@@ -181,8 +181,8 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
     """
 
     # Extract config values
-    model_in_folder = config['model_in_folder']
-    obs_in_folder = config['obs_in_folder']
+    model_files_folder = config['model_files_folder']
+    obs_seq_in_folder = config['obs_seq_in_folder']
     output_folder = config['output_folder']
     template_file = config['template_file']
     static_file = config['static_file']
@@ -208,8 +208,8 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
     print("Configuration:")
     print(f"  perfect_model_obs_dir: {perfect_model_obs_dir}")
     print(f"  input_nml: {input_nml}")
-    print(f"  model_in_folder: {model_in_folder}")
-    print(f"  obs_in_folder: {obs_in_folder}")
+    print(f"  model_files_folder: {model_files_folder}")
+    print(f"  obs_seq_in_folder: {obs_seq_in_folder}")
     print(f"  output_folder: {output_folder}")
     print(f"  template_file: {template_file}")
     print(f"  static_file: {static_file}")
@@ -219,12 +219,12 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
         print(f"  trimmed_obs_folder: {trimmed_obs_folder}")
 
     # Validating config parameters
-    print("Validating model_in_folder...")
-    check_directory_not_empty(model_in_folder, "model_in_folder")
-    check_nc_files_only(model_in_folder, "model_in_folder")
+    print("Validating model_files_folder...")
+    check_directory_not_empty(model_files_folder, "model_files_folder")
+    check_nc_files_only(model_files_folder, "model_files_folder")
 
-    print("Validating obs_in_folder...")
-    check_directory_not_empty(obs_in_folder, "obs_in_folder")
+    print("Validating obs_seq_in_folder...")
+    check_directory_not_empty(obs_seq_in_folder, "obs_seq_in_folder")
 
     print("Validating output_folder...")
     check_or_create_folder(output_folder,"output_folder")
@@ -267,8 +267,8 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
     )
 
     # Get and validate file lists
-    model_in_files = get_sorted_files(model_in_folder, "*.nc")
-    obs_in_files = get_sorted_files(obs_in_folder, "*")
+    model_in_files = get_sorted_files(model_files_folder, "*.nc")
+    obs_in_files = get_sorted_files(obs_seq_in_folder, "*")
     #validate_file_counts(model_in_files, obs_in_files)
 
     print(f"Found {len(model_in_files)} files to process")
@@ -347,8 +347,8 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
 
 def process_model_obs_pair(config, model_in_file, obs_in_file, trim_obs, counter, hull_polygon, hull_points, namelist_content, force_obs_time):
 
-    model_in_folder = config['model_in_folder']
-    obs_in_folder = config['obs_in_folder']
+    model_files_folder = config['model_files_folder']
+    obs_seq_in_folder = config['obs_seq_in_folder']
     output_folder = config['output_folder']
     template_file = config['template_file']
     static_file = config['static_file']

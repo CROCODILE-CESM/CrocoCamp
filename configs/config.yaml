@@ -1,18 +1,21 @@
 # Configuration file to loop over perfect_model_obs
 
+# Path to DART's perfect model obs executable
+perfect_model_obs_dir: /path/to/DART/models/MOM6/work
+
 # Input directory containing model .nc files to process
-model_in_folder: /home/username/work/pmo/in_mom6/
+model_files_folder: /path/to/pmo/in_mom6/
 
 # Model configuration files (must be .nc files)
-template_file: /home/username/work/pmo/in_mom6/template.nc
-static_file: /home/username/work/pmo/reference_nc/mom6.h.static.nc
-ocean_geometry:  /home/username/work/pmo/reference_nc/mom6.h.ocean_geometry.nc
+template_file: /path/to/pmo/in_mom6/template.nc
+static_file: /path/to/pmo/in_mom6_nc/mom6.h.static.nc
+ocean_geometry:  /path/to/pmo/in_mom6_nc/mom6.h.ocean_geometry.nc
 
 # Directory containing observation files
-obs_in_folder: /work/emilanese/pmo/in_obs/
+obs_seq_in_folder: /path/to/pmo/in_obs/
 
 # Output directory for processed files (will be created if it doesn't exist)
-output_folder: /work/emilanese/pmo/out/
-input_nml_bck: /work/emilanese/pmo/input_bckp
-trimmed_obs_folder: /work/emilanese/pmo/trimmed_obs_in
-parquet_folder: /work/emilanese/pmo/out_parquet/
+output_folder: /path/to/pmo/out_obs_seq_in/
+input_nml_bck: /path/to/pmo/input_bckp
+trimmed_obs_folder: /path/to/pmo/out_trimmed_obs_in
+parquet_folder: /path/to/pmo/out_parquet/

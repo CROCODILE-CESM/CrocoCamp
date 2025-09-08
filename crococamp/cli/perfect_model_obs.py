@@ -69,9 +69,12 @@ def main():
 
         # Read and validate config
         config = read_config(config_file)
-        required_keys = ['model_in_folder', 'obs_in_folder', 'output_folder',
+        required_keys = ['model_files_folder', 'obs_seq_in_folder', 'output_folder',
                          'template_file', 'static_file', 'ocean_geometry',
                          'perfect_model_obs_dir', 'parquet_folder']
+
+        if config['perfect_model_obs_dir'] is None:
+            raise ValueError("perfect_model_obs_dir must be specified in the config file")
 
         validate_config_keys(config, required_keys)
 
