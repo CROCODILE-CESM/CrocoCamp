@@ -1,164 +1,17 @@
-"""Model-observation comparison workflow orchestration for CrocoCamp."""
+"""Model-observation comparison workflow orchestration for CrocoCamp.
 
-import glob
-import os
-import shutil
-import subprocess
+This module provides backward compatibility with the original function-based API
+while the new class-based API is recommended for new code.
+"""
 
-import dask.dataframe as dd
-import numpy as np
-import pandas as pd
-import pydartdiags.obs_sequence.obs_sequence as obsq
-import xarray as xr
-
-from ..io.file_utils import get_sorted_files, get_model_time_in_days_seconds, get_obs_time_in_days_seconds
-from ..io.model_tools import get_model_boundaries
-from ..io.obs_seq_tools import trim_obs_seq_in
-from ..utils.config import (
-    check_directory_not_empty, check_nc_files_only, check_or_create_folder,
-    check_nc_file
-)
-from ..utils.namelist import read_namelist, write_namelist, update_namelist_param, symlink_to_namelist, cleanup_namelist_symlink
-
-
-def merge_pair_to_parquet(perf_obs_file, orig_obs_file, parquet_path):
-    """Merge a pair of observation files into parquet format."""
-    
-    # Read obs_sequence files
-    perf_obs_out = obsq.ObsSequence(perf_obs_file)
-    perf_obs_out.update_attributes_from_df()
-    trimmed = obsq.ObsSequence(orig_obs_file)
-    trimmed.update_attributes_from_df()
-
-    obs_col = [col for col in trimmed.df.columns.to_list() if col.endswith("_observation") or col=="observation"]
-    print(trimmed.df.columns.to_list())
-    print(obs_col)
-    if len(obs_col) > 1:
-        raise ValueError("More than one observation columns found.")
-    else:
-        trimmed.df = trimmed.df.rename(columns={obs_col[0]:"obs"})
-    perf_obs_out.df = perf_obs_out.df.rename(columns={"truth":"model"})
-
-    # Generate unique hash for merging (obs_num is not unique across files, but
-    # time is)
-    def compute_hash(df, cols, hash_col="hash"):
-        concat = df[cols].astype(str).agg('-'.join, axis=1)
-        df[hash_col] = pd.util.hash_pandas_object(concat, index=False).astype('int64')
-        return df
-
-    trimmed.df = compute_hash(trimmed.df, ['obs_num', 'seconds', 'days'])
-    perf_obs_out.df = compute_hash(perf_obs_out.df, ['obs_num', 'seconds', 'days'])
-
-    # Merge DataFrames
-    merge_key = "hash"
-    trimmed.df = trimmed.df.set_index(merge_key, drop=True)
-    perf_obs_out.df = perf_obs_out.df.set_index(merge_key, drop=True)
-    ref_cols = ['longitude', 'latitude', 'time', 'vertical', 'type', 'obs_err_var']
-    merged = pd.merge(
-        trimmed.df[ref_cols + ['obs']],
-        perf_obs_out.df[ref_cols + ['model']],
-        left_index=True,
-        right_index=True,
-        how='outer',
-        suffixes=('_trim', '_perf')
-    )
-
-    # Check that reference columns are indeed identical and deduplicate them
-    for col in ref_cols:
-        c_trim, c_perf = f"{col}_trim", f"{col}_perf"
-        if c_trim in merged and c_perf in merged:
-            if merged[c_trim].equals(merged[c_perf]) or np.all(np.isclose(merged[c_trim], merged[c_perf], atol=1e-13)):
-                merged = merged.drop(columns=[c_trim])
-                merged = merged.rename(columns={c_perf: col})
-            else:
-                raise ValueError(f"{col}: {c_trim} and {c_perf} not identical. The two files probably do not refer to the same observation space.")
-        else:
-            raise ValueError(f"{col}: one of {c_trim}, {c_perf} not present in merged DataFrame. The two files probably do not refer to the same observation space.")
-
-    # Sort dataframe by time -> position -> depth
-    sort_order = ['time', 'longitude', 'latitude', 'vertical']
-    merged = merged.sort_values(by=sort_order)
-
-    # Add diagnostic columns
-    merged['residual'] = merged['obs'] - merged['model']
-    merged['abs_residual'] = np.abs(merged['residual'])
-    merged['normalized_residual'] = merged['residual'] / np.sqrt(merged['obs_err_var'])
-    merged['squared_residual'] = merged['residual'] ** 2
-    merged['log_likelihood'] = -0.5 * (
-        merged['residual'] ** 2 / merged['obs_err_var'] +
-        np.log(2 * np.pi * merged['obs_err_var'])
-    )
-
-    # Reorder columns
-    column_order = [
-        'time', 'longitude', 'latitude', 'vertical', 'type',
-        'model', 'obs', 'obs_err_var',
-    ]
-    remaining_cols = [col for col in merged.columns if col not in column_order]
-    merged = merged[column_order + remaining_cols]
-
-    ddf = dd.from_pandas(merged)
-    name_function = lambda x: f"tmp-model-obs-{x}.parquet"
-    append = True
-    if not os.listdir(parquet_path):
-        append=False # create new dataset if it's the first in the folder,
-                     # append otherwise
-    ddf.to_parquet(
-        parquet_path,
-        append=append,
-        name_function=name_function,
-        write_metadata_file=True,
-        ignore_divisions=True
-    )
-
-    return
-
-
-def merge_model_obs_to_parquet(config, trim_obs):
-    """Merge model and observation files to parquet format."""
-    output_folder = config['output_folder']
-    parquet_folder = config['parquet_folder']
-    if trim_obs:
-        obs_folder = config['trimmed_obs_folder']
-    else:
-        obs_folder = config['obs_seq_in_folder']
-
-    print("Validating parquet_folder...")
-    check_or_create_folder(parquet_folder, "parquet_folder")
-
-    perf_obs_files = sorted(
-        glob.glob(os.path.join(output_folder, "obs_seq*.out"))
-    )
-    orig_obs_files = sorted(
-        glob.glob(os.path.join(obs_folder, "*obs_seq*.in"))
-    )
-    print("perf_obs_files")
-    print(perf_obs_files)
-    print("orig_obs_files")
-    print(orig_obs_files)
-
-    tmp_parquet_folder = os.path.join(parquet_folder, "tmp")
-    os.makedirs(tmp_parquet_folder, exist_ok=True)
-
-    for perf_obs_f, orig_obs_f in zip(perf_obs_files, orig_obs_files):
-        merge_pair_to_parquet(perf_obs_f, orig_obs_f, tmp_parquet_folder)
-
-    ddf = dd.read_parquet(tmp_parquet_folder)
-    ddf = ddf.repartition(partition_size="300MB")
-    name_function = lambda x: f"model-obs-{x}.parquet"
-    ddf.to_parquet(
-        parquet_folder,
-        append=False,
-        name_function=name_function
-    )
-
-    shutil.rmtree(tmp_parquet_folder)
-
-    return
+from .workflow_model_obs import WorkflowModelObs
 
 
 def process_files(config, trim_obs=False, no_matching=False, force_obs_time=False):
     """Function that takes a configuration dictionary and processes files.
+    
+    This is a backward compatibility wrapper around WorkflowModelObs.
+    For new code, use WorkflowModelObs class directly.
 
     Arguments:
     config -- Dictionary containing the following configuration parameters:
@@ -177,279 +30,44 @@ def process_files(config, trim_obs=False, no_matching=False, force_obs_time=Fals
     1:1 correspondence between model and obs files when sorted (default: False)
 
     force_obs_time -- Boolean indicating whether to assign observations reference time to model files
-
+    
+    Returns:
+        Number of files processed
     """
-
-    # Extract config values
-    model_files_folder = config['model_files_folder']
-    obs_seq_in_folder = config['obs_seq_in_folder']
-    output_folder = config['output_folder']
-    template_file = config['template_file']
-    static_file = config['static_file']
-    ocean_geometry = config['ocean_geometry']
-    perfect_model_obs_dir = config['perfect_model_obs_dir']
-    input_nml = os.path.join(perfect_model_obs_dir, "input.nml")
-
-    try:
-        input_nml_bck = config['input_nml_bck']
-    except:
-        print("No input_nml_bck provided, using default 'input.nml.backup'")
-        config['input_nml_bck'] = "input.nml.backup"
-        input_nml_bck = config['input_nml_bck']
-
-    if trim_obs:
-        try:
-            trimmed_obs_folder = config['trimmed_obs_folder']
-        except:
-            print("No trimmed_obs_folder provided, using default 'trimmed_obs_seq'")
-            config['trimmed_obs_folder'] = "trimmed_obs_seq"
-            trimmed_obs_folder = config['trimmed_obs_folder']
-
-    print("Configuration:")
-    print(f"  perfect_model_obs_dir: {perfect_model_obs_dir}")
-    print(f"  input_nml: {input_nml}")
-    print(f"  model_files_folder: {model_files_folder}")
-    print(f"  obs_seq_in_folder: {obs_seq_in_folder}")
-    print(f"  output_folder: {output_folder}")
-    print(f"  template_file: {template_file}")
-    print(f"  static_file: {static_file}")
-    print(f"  ocean_geometry: {ocean_geometry}")
-    print(f"  input_nml_bck: {input_nml_bck}")
-    if trim_obs:
-        print(f"  trimmed_obs_folder: {trimmed_obs_folder}")
-
-    # Validating config parameters
-    print("Validating model_files_folder...")
-    check_directory_not_empty(model_files_folder, "model_files_folder")
-    check_nc_files_only(model_files_folder, "model_files_folder")
-
-    print("Validating obs_seq_in_folder...")
-    check_directory_not_empty(obs_seq_in_folder, "obs_seq_in_folder")
-
-    print("Validating output_folder...")
-    check_or_create_folder(output_folder,"output_folder")
-
-    if trim_obs:
-        print("Validating trimmed_obs_folder...")
-        check_or_create_folder(trimmed_obs_folder, "trimmed_obs_folder")
-
-    print("Setting up symlink for input.nml...")
-    symlink_to_namelist(input_nml)
-
-    print("Validating input_nml_bck...")
-    check_or_create_folder(input_nml_bck, "input_nml_bck")
-
-    print("Validating .nc files for model_nml...")
-    check_nc_file(template_file, "template_file")
-    check_nc_file(static_file, "static_file")
-    check_nc_file(ocean_geometry, "ocean_geometry")
-
-    print("Checking input.nml...")
-    # Create backup of input.nml
-    try:
-        shutil.copy2(input_nml, "input.nml.backup")
-        print("Created backup: input.nml.backup")
-    except IOError as e:
-        raise IOError(f"Could not create backup of input.nml: {e}")
-
-    # Read and update namelist
-    namelist_content = read_namelist(input_nml)
-
-    print("Updating &model_nml section...")
-    namelist_content = update_namelist_param(
-        namelist_content, "model_nml", "template_file", template_file
-    )
-    namelist_content = update_namelist_param(
-        namelist_content, "model_nml", "static_file", static_file
-    )
-    namelist_content = update_namelist_param(
-        namelist_content, "model_nml", "ocean_geometry", ocean_geometry
-    )
-
-    # Get and validate file lists
-    model_in_files = get_sorted_files(model_files_folder, "*.nc")
-    obs_in_files = get_sorted_files(obs_seq_in_folder, "*")
-    #validate_file_counts(model_in_files, obs_in_files)
-
-    print(f"Found {len(model_in_files)} files to process")
-
-    hull_polygon, hull_points = None, None
-    if trim_obs:
-        # Get model boundaries
-        print("Getting model boundaries...")
-        hull_polygon, hull_points = get_model_boundaries(ocean_geometry)
-        # hull_polygon, hull_points = get_model_boundaries(model_in_files[0])
-
-    if no_matching: # trust the obs and model files match 1:1 when sorted
-        for counter, (model_in_file, obs_in_file) in enumerate(zip(model_in_files, obs_in_files)):
-            process_model_obs_pair(config, model_in_file, obs_in_file, trim_obs, counter, hull_polygon, hull_points, namelist_content, force_obs_time)
-
-    else: # look for each model-obs pair through time-matching
-        # Process each mom6 file
-        counter = 0
-        used_obs_in_files = []
-        for model_in_f in model_in_files:
-
-            # For each mom6 file: open it, get number of snapshots and loop over
-            # them. For each snapshot, find the obs_seq.in file whose time range
-            # includes the snapshot. If found, slice the snapshot out of the mom6
-            # file into a temporary tmp_model_in_file and call perfect_model_obs on
-            # the pair (tmp_model_in_file, obs_seq.in). Take note of the obs_seq.in
-            # files already used, to skip the check in the next snapshots and mom6
-            # files to speed up finding each pair. The temporary files are removed
-            # after each call to perfect_model_obs.
-            print(f"Processing model file {model_in_f}...")
-            with xr.open_dataset(model_in_f, decode_times=False) as ds:
-                # fix calendar as xarray does not read it consistently with ncviews
-                # for unknown reasons
-                ds['time'].attrs['calendar'] = 'proleptic_gregorian'
-                ds = xr.decode_cf(ds)
-                snapshots_nb = ds.dims['time']
-                print(f"    model has {snapshots_nb} snapshots.")
-                for t_id, time in enumerate(ds['time'].values):
-                    print(f"    processing snapshot {t_id+1} of {snapshots_nb}...")
-                    for obs_in_file in obs_in_files:
-                        # skip obs_seq.in files already used
-                        if obs_in_file in used_obs_in_files:
-                            continue
-                        obs_in_df = obsq.ObsSequence(obs_in_file)
-                        t1 = obs_in_df.df.time.min()
-                        t2 = obs_in_df.df.time.max()
-                        if t1 <= pd.Timestamp(time) <= t2:
-                            counter += 1
-                            used_obs_in_files.append(obs_in_file)
-                            tmp_model_in_file = model_in_f + "_tmp_" + str(t_id)
-
-                            if snapshots_nb > 1:
-                                # Slice out the snapshot into a temporary file
-                                ncks = [
-                                    "ncks", "-d", f"time,{t_id}",
-                                    model_in_f, tmp_model_in_file
-                                ]
-                                print(f"Calling {' '.join(ncks)}")
-                                subprocess.run(ncks, check=True)
-                            else:
-                                # If only one snapshot, just use the file as is
-                                tmp_model_in_file = model_in_f
-
-                            # Call perfect_model_obs on the pair (tmp_model_in_file, obs_in_file)
-                            process_model_obs_pair(config, tmp_model_in_file, obs_in_file, trim_obs, counter, hull_polygon, hull_points, namelist_content, force_obs_time)
-
-                            # Remove temporary file if it was created
-                            if snapshots_nb > 1:
-                                os.remove(tmp_model_in_file)
-
-    # remove temporay symbolic link to input.nml
-    cleanup_namelist_symlink()
-
-    return len(model_in_files)
+    workflow = WorkflowModelObs(config)
+    return workflow.process_files(trim_obs=trim_obs, no_matching=no_matching, force_obs_time=force_obs_time)
 
 
-def process_model_obs_pair(config, model_in_file, obs_in_file, trim_obs, counter, hull_polygon, hull_points, namelist_content, force_obs_time):
+def merge_model_obs_to_parquet(config, trim_obs):
+    """Merge model and observation files to parquet format.
+    
+    This is a backward compatibility wrapper around WorkflowModelObs.
+    For new code, use WorkflowModelObs class directly.
+    
+    Arguments:
+    config -- Configuration dictionary
+    trim_obs -- Boolean indicating whether trimmed observations were used
+    """
+    workflow = WorkflowModelObs(config)
+    workflow.merge_model_obs_to_parquet(trim_obs)
 
-    model_files_folder = config['model_files_folder']
-    obs_seq_in_folder = config['obs_seq_in_folder']
-    output_folder = config['output_folder']
-    template_file = config['template_file']
-    static_file = config['static_file']
-    ocean_geometry = config['ocean_geometry']
-    input_nml_bck = config.get('input_nml_bck', 'input.nml.backup')
-    trimmed_obs_folder = config.get('trimmed_obs_folder', 'trimmed_obs_seq')
-    perfect_model_obs_dir = config['perfect_model_obs_dir']
-    input_nml = os.path.join(perfect_model_obs_dir, "input.nml")
 
-    model_in_filename = os.path.basename(model_in_file)
-    obs_in_filename = os.path.basename(obs_in_file)
-
-    file_number = f"{counter:04d}"
-
-    obs_in_file_nml = obs_in_file
-    if trim_obs:
-        print(f"Trimming obs_seq.in file {obs_in_filename} to model grid boundaries...")
-        trimmed_obs_file = os.path.join(trimmed_obs_folder, f"trimmed_obs_seq_{file_number}.in")
-        trim_obs_seq_in(obs_in_file, hull_polygon, hull_points, trimmed_obs_file)
-        obs_in_file_nml = trimmed_obs_file
-
-    perfect_output_filename = f"perfect_output_{file_number}.nc"
-    perfect_output_path = os.path.join(output_folder, perfect_output_filename)
-
-    obs_output_filename = f"obs_seq_{file_number}.out"
-    obs_output_path = os.path.join(output_folder, obs_output_filename)
-
-    print(f"Processing file #{counter + 1}:")
-    print(f"  Model input file: {model_in_filename}")
-    print(f"  Obs input file: {obs_in_file_nml}")
-    print(f"  Perfect output file: {perfect_output_filename}")
-    print(f"  Obs output file: {obs_output_filename}")
-
-    # Update namelist parameters
-    namelist_content = update_namelist_param(
-        namelist_content, "perfect_model_obs_nml","input_state_files", model_in_file
-    )
-    namelist_content = update_namelist_param(
-        namelist_content, "perfect_model_obs_nml","output_state_files", perfect_output_path
-    )
-    namelist_content = update_namelist_param(
-        namelist_content, "perfect_model_obs_nml","obs_seq_in_file_name", obs_in_file_nml
-    )
-    namelist_content = update_namelist_param(
-        namelist_content, "perfect_model_obs_nml","obs_seq_out_file_name", obs_output_path
-    )
-
-    if not force_obs_time:
-        # Assign time to model file
-        print("Retrieving model time from model input file and updating namelist...")
-        model_time_days, model_time_seconds = get_model_time_in_days_seconds(model_in_file)
-        namelist_content = update_namelist_param(
-            namelist_content, "perfect_model_obs_nml","init_time_days", model_time_days,
-            string=False
-        )
-        namelist_content = update_namelist_param(
-            namelist_content, "perfect_model_obs_nml","init_time_seconds", model_time_seconds,
-            string=False
-        )
-    else:
-        # Assign time to model file
-        print("Retrieving obs time from obs_seq and updating namelist...")
-        obs_time_days, obs_time_seconds = get_obs_time_in_days_seconds(obs_in_file)
-        namelist_content = update_namelist_param(
-            namelist_content, "perfect_model_obs_nml","init_time_days", obs_time_days,
-            string=False
-        )
-        namelist_content = update_namelist_param(
-            namelist_content, "perfect_model_obs_nml","init_time_seconds", obs_time_seconds,
-            string=False
-        )
-
-    # Write updated namelist
-    write_namelist(input_nml, namelist_content)
-    input_nml_bck_path = os.path.join(input_nml_bck, f"input.nml_{file_number}.backup")
-    write_namelist(input_nml_bck_path, namelist_content)
-    print("input.nml modified.")
-    print()
-
-    # Call perfect_model_obs
-    print("Calling perfect_model_obs...")
-    perfect_model_obs = os.path.join(perfect_model_obs_dir, "perfect_model_obs")
-    process = subprocess.Popen(
-        [perfect_model_obs],
-        stdout=subprocess.PIPE,  # Capture stdout
-        stderr=subprocess.PIPE,  # Capture stderr (optional)
-        text=True                # Decode output as text (Python 3.7+)
-    )
-
-    # Stream the output line-by-line
-    for line in process.stdout:
-        print(line, end="")  # Print each line as it is produced
-
-    # Wait for the process to finish
-    process.wait()
-
-    # Check the return code for errors
-    if process.returncode != 0:
-        raise RuntimeError(f"Error: {process.stderr.read()}")
-
-    print(f"Perfect model output saved to: {perfect_output_path}")
-    print(f"obs_seq.out output saved to: {obs_output_path}")
-
-    return
+def merge_pair_to_parquet(perf_obs_file, orig_obs_file, parquet_path):
+    """Merge a pair of observation files into parquet format.
+    
+    This is a backward compatibility wrapper around WorkflowModelObs.
+    For new code, use WorkflowModelObs class directly.
+    """
+    # Create a minimal config just for this operation
+    config = {
+        'model_files_folder': '',
+        'obs_seq_in_folder': '', 
+        'output_folder': '',
+        'template_file': '',
+        'static_file': '', 
+        'ocean_geometry': '',
+        'perfect_model_obs_dir': '',
+        'parquet_folder': ''
+    }
+    workflow = WorkflowModelObs(config)
+    workflow._merge_pair_to_parquet(perf_obs_file, orig_obs_file, parquet_path)
