@@ -407,13 +407,21 @@ class WorkflowModelObs(workflow.Workflow):
         trimmed.update_attributes_from_df()
 
         obs_col = [col for col in trimmed.df.columns.to_list() if col.endswith("_observation") or col=="observation"]
-        print(trimmed.df.columns.to_list())
-        print(obs_col)
         if len(obs_col) > 1:
             raise ValueError("More than one observation columns found.")
         else:
             trimmed.df = trimmed.df.rename(columns={obs_col[0]:"obs"})
-        perf_obs_out.df = perf_obs_out.df.rename(columns={"truth":"model"})
+
+        qc_col = [col for col in perf_obs_out.df.columns.to_list() if col.endswith("_QC")]
+        if len(qc_col) > 1:
+            raise ValueError("More than one QC column found.")
+        perf_model_col = 'perfect_model'
+        perf_model_col_QC = perf_model_col + "_QC"
+        perf_obs_out.df = perf_obs_out.df.rename(
+            columns={
+                "truth":perf_model_col,
+                qc_col[0]:perf_model_col_QC
+            })
 
         # Generate unique hash for merging
         def compute_hash(df, cols, hash_col="hash"):
@@ -431,7 +439,7 @@ class WorkflowModelObs(workflow.Workflow):
         ref_cols = ['longitude', 'latitude', 'time', 'vertical', 'type', 'obs_err_var']
         merged = pd.merge(
             trimmed.df[ref_cols + ['obs']],
-            perf_obs_out.df[ref_cols + ['model']],
+            perf_obs_out.df[ref_cols + [perf_model_col, perf_model_col_QC]],
             left_index=True,
             right_index=True,
             how='outer',
@@ -455,7 +463,7 @@ class WorkflowModelObs(workflow.Workflow):
         merged = merged.sort_values(by=sort_order)
 
         # Add diagnostic columns
-        merged['residual'] = merged['obs'] - merged['model']
+        merged['residual'] = merged['obs'] - merged[perf_model_col]
         merged['abs_residual'] = np.abs(merged['residual'])
         merged['normalized_residual'] = merged['residual'] / np.sqrt(merged['obs_err_var'])
         merged['squared_residual'] = merged['residual'] ** 2
@@ -467,7 +475,7 @@ class WorkflowModelObs(workflow.Workflow):
         # Reorder columns
         column_order = [
             'time', 'longitude', 'latitude', 'vertical', 'type',
-            'model', 'obs', 'obs_err_var',
+            perf_model_col, 'obs', 'obs_err_var',
         ]
         remaining_cols = [col for col in merged.columns if col not in column_order]
         merged = merged[column_order + remaining_cols]
