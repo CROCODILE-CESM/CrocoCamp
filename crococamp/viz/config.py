@@ -1,0 +1,40 @@
+"""Configuration classes for visualization defaults."""
+
+
+class MapConfig:
+    """Configuration for interactive map visualization.
+    
+    Provides default settings for the InteractiveMapWidget with options for customization.
+    All parameters can be overridden during initialization.
+    """
+    
+    def __init__(self, colormap='cividis', plot_title='Obs relative differences', 
+                 map_extent=None, padding=5.0, figure_size=(18, 10), 
+                 scatter_size=100, scatter_alpha=0.7, default_window_hours=None,
+                 disallowed_plotvars=None):
+        """Initialize map configuration.
+        
+        Args:
+            colormap: Matplotlib colormap name
+            plot_title: Base title for the plot
+            map_extent: Map extent as (lon_min, lon_max, lat_min, lat_max) or None for auto
+            padding: Padding in degrees for auto extent calculation
+            figure_size: Figure size as (width, height) in inches
+            scatter_size: Size of scatter points
+            scatter_alpha: Alpha transparency of scatter points
+            default_window_hours: Default time window in hours (defaults to 4 weeks)
+            disallowed_plotvars: Variables to exclude from plot variable dropdown
+        """
+        self.colormap = colormap
+        self.plot_title = plot_title
+        self.map_extent = map_extent
+        self.padding = padding
+        self.figure_size = figure_size
+        self.scatter_size = scatter_size
+        self.scatter_alpha = scatter_alpha
+        self.default_window_hours = default_window_hours or (24 * 7 * 4)  # 4 weeks
+        
+        if disallowed_plotvars is None:
+            self.disallowed_plotvars = ["time", "type", "longitude", "latitude", "vertical"]
+        else:
+            self.disallowed_plotvars = disallowed_plotvars

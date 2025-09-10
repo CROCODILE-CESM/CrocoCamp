@@ -89,6 +89,72 @@ perfect-model-obs -c config.yaml --no-matching
 # Convert existing outputs to parquet only
 perfect-model-obs -c config.yaml --parquet-only
 ```
+### Programmatic Usage (Class-based API)
+
+For Python scripts and Jupyter notebooks, use the class-based API:
+
+```python
+from crococamp.workflows import WorkflowModelObs
+
+# Load workflow from configuration file
+workflow = WorkflowModelObs.from_config_file("config.yaml")
+
+# Or create workflow with config dictionary directly in code
+config = {
+    'model_files_folder': '/path/to/model/files',
+    'obs_seq_in_folder': '/path/to/obs_seq_in/files', 
+    'output_folder': '/path/to/output',
+    'template_file': '/path/to/template.nc',
+    'static_file': '/path/to/static.nc',
+    'ocean_geometry': '/path/to/geometry.nc',
+    'perfect_model_obs_dir': '/path/to/perfect_model_obs',
+    'parquet_folder': '/path/to/parquet'
+}
+workflow = WorkflowModelObs(config)
+
+# Run the complete workflow
+files_processed = workflow.run(trim_obs=True, no_matching=False)
+
+# Or run specific steps
+files_processed = workflow.process_files(trim_obs=True)
+workflow.merge_model_obs_to_parquet(trim_obs=True)
+```
+
+You can also override configuration values:
+
+```python
+# Override config values when creating workflow
+workflow = WorkflowModelObs.from_config_file(
+    "config.yaml", 
+    output_folder="/custom/output/path",
+    trim_obs=True
+)
+
+# Or modify configuration after creation
+workflow.set_config("parquet_folder", "/custom/parquet/path")
+
+# Access configuration values
+output_folder = workflow.get_config("output_folder") 
+workflow.print_config()  # Print all current configuration
+
+# Get required configuration keys for validation
+required_keys = workflow.get_required_config_keys()
+
+workflow.run()
+```
+
+### Legacy Function-based API
+
+For backward compatibility, the original function-based API is still available:
+
+```python
+from crococamp.workflows.model_obs import process_files, merge_model_obs_to_parquet
+from crococamp.utils.config import read_config
+
+config = read_config("config.yaml")
+files_processed = process_files(config, trim_obs=True)
+merge_model_obs_to_parquet(config, trim_obs=True)
+```
 
 ## Demo
 

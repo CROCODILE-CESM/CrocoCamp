@@ -1,0 +1,387 @@
+"""Interactive map widget for model-observation comparison visualization."""
+
+import re
+import pandas as pd
+import dask.dataframe as dd
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+from datetime import timedelta
+
+from .config import MapConfig
+
+
+class InteractiveMapWidget:
+    """Interactive map widget for visualizing model-observation comparisons.
+    
+    This widget provides an interactive interface for exploring temporal and spatial
+    patterns in model-observation differences with support for both dask and pandas DataFrames.
+    """
+    
+    def __init__(self, dataframe, config=None):
+        """Initialize the interactive map widget.
+        
+        Args:
+            dataframe: Input dataframe (pandas or dask) containing observation data
+            config: MapConfig instance for customization (optional)
+        """
+        self.df = dataframe
+        self.config = config or MapConfig()
+        
+        # Internal state
+        self.filtered_df = None
+        self.min_time = None
+        self.max_time = None
+        self.total_hours = None
+        self.plot_var = None
+        self.map_extent = None
+        
+        # Initialize widgets
+        self._create_widgets()
+        self._setup_callbacks()
+        self._calculate_map_extent()
+        
+    def _is_dask_dataframe(self):
+        """Check if the dataframe is a dask DataFrame."""
+        return hasattr(self.df, 'compute')
+        
+    def _compute_if_needed(self, series_or_df):
+        """Compute dask series/dataframe if needed, otherwise return as-is."""
+        if hasattr(series_or_df, 'compute'):
+            return series_or_df.compute()
+        return series_or_df
+        
+    def _persist_if_needed(self, df):
+        """Persist dask dataframe if needed, otherwise return as-is."""
+        if hasattr(df, 'persist'):
+            return df.persist()
+        return df
+        
+    def _calculate_map_extent(self):
+        """Calculate map extent from data if not provided in config."""
+        if self.config.map_extent is not None:
+            self.map_extent = self.config.map_extent
+            return
+            
+        # Auto-calculate extent with padding
+        padding = self.config.padding
+        lon_min = (self._compute_if_needed(self.df['longitude'].min()) % 180 - 180) - padding
+        if lon_min < -170:
+            lon_min = -180
+        lon_max = (self._compute_if_needed(self.df['longitude'].max()) % 180 - 180) + padding
+        if lon_max > 170:
+            lon_max = 180
+        lat_min = self._compute_if_needed(self.df['latitude'].min()) - padding
+        if lat_min < -80:
+            lat_min = -90
+        lat_max = self._compute_if_needed(self.df['latitude'].max()) + padding
+        if lat_max > 80:
+            lat_max = 90
+            
+        self.map_extent = (lon_min, lon_max, lat_min, lat_max)
+        
+    def _create_widgets(self):
+        """Create all UI widgets."""
+        # Output widget for plot display
+        self.output = widgets.Output()
+        
+        # Select available observation types
+        type_options = self._compute_if_needed(self.df["type"].drop_duplicates()).sort_values().tolist()
+        self.type_dropdown = widgets.Dropdown(
+            options=type_options,
+            value="FLOAT_TEMPERATURE" if "FLOAT_TEMPERATURE" in type_options else type_options[0],
+            description="Observation type:",
+        )
+        
+        # Select plotted variable
+        refvar_options = [val for val in self.df.columns.to_list() 
+                         if val not in self.config.disallowed_plotvars]
+        self.refvar_dropdown = widgets.Dropdown(
+            options=refvar_options,
+            value="residual" if "residual" in refvar_options else refvar_options[0],
+            description="Plotted variable",
+        )
+        
+        # Window sliders for selecting the time window
+        self.window_slider = widgets.IntSlider(
+            value=self.config.default_window_hours,
+            min=1,
+            max=self.config.default_window_hours,
+            step=1,
+            description='Window (hrs):',
+            style={'description_width': 'initial'},
+            continuous_update=False
+        )
+        
+        self.window_text = widgets.Text(
+            value='',
+            description='Override window:',
+            placeholder='e.g. 4 weeks, 3 days, 48 hours',
+            style={'description_width': 'initial'}
+        )
+        
+        # Center time slider initialization (dummy value to avoid TraitError)
+        dummy_time = pd.Timestamp('2000-01-01 00:00:00')
+        self.center_slider = widgets.SelectionSlider(
+            options=[dummy_time],
+            value=dummy_time,
+            description='Center time:',
+            style={'description_width': 'initial'},
+            continuous_update=False
+        )
+        
+        # Colorbar slider for map color limits
+        self.colorbar_slider = widgets.FloatRangeSlider(
+            value=[0, 1],
+            min=0,
+            max=1,
+            step=0.01,
+            description='Colorbar limits:',
+            style={'description_width': 'initial'},
+            continuous_update=False
+        )
+        
+    def _setup_callbacks(self):
+        """Set up widget observers."""
+        self.refvar_dropdown.observe(self._on_refvar_change, names='value')
+        self.type_dropdown.observe(self._on_type_change, names='value')
+        self.window_slider.observe(self._on_window_change, names='value')
+        self.window_text.observe(self._on_window_change, names='value')
+        self.center_slider.observe(self._on_center_change, names='value')
+        self.colorbar_slider.observe(self._on_colorbar_change, names='value')
+        
+    def parse_window(self, text):
+        """Parse a human-readable window string to a timedelta."""
+        text = text.strip().lower()
+        if not text:
+            return None
+        patterns = [
+            (r'(\d+)\s*weeks?', 'weeks'),
+            (r'(\d+)\s*days?', 'days'),
+            (r'(\d+)\s*hours?', 'hours'),
+            (r'(\d+)\s*minutes?', 'minutes'),
+        ]
+        kwargs = {}
+        for pat, unit in patterns:
+            m = re.search(pat, text)
+            if m:
+                kwargs[unit] = int(m.group(1))
+        if kwargs:
+            return timedelta(**kwargs)
+        try:
+            return pd.to_timedelta(text)
+        except Exception:
+            return None
+            
+    def _get_window_timedelta(self):
+        """Get current window timedelta from text or slider."""
+        td = self.parse_window(self.window_text.value)
+        if td is None:
+            td = timedelta(hours=self.window_slider.value)
+        return td
+        
+    def _update_refvar(self, selected_var):
+        """Update global variable for the plotted variable."""
+        self.plot_var = selected_var
+        
+    def _update_filtered_df(self, selected_type):
+        """Update filtered dataframe and its time metadata for a selected type."""
+        self.filtered_df = self._persist_if_needed(
+            self.df[self.df["type"] == selected_type]
+        )
+        self.min_time = self._compute_if_needed(self.filtered_df['time'].min())
+        self.max_time = self._compute_if_needed(self.filtered_df['time'].max())
+        self.total_hours = int((self.max_time - self.min_time).total_seconds() // 3600)
+        
+    def _update_center_slider(self, window_td):
+        """Update center time slider options based on currently filtered data and window."""
+        dummy_time = pd.Timestamp('2000-01-01 00:00:00')
+        if self.min_time is None or self.max_time is None:
+            self.center_slider.options = [dummy_time]
+            self.center_slider.value = dummy_time
+            return
+        half_window = window_td / 2
+        center_min = self.min_time + half_window
+        center_max = self.max_time - half_window
+        if center_min > center_max:
+            self.center_slider.options = [self.min_time]
+            self.center_slider.value = self.min_time
+            return
+        options = pd.date_range(center_min, center_max, freq='1h')
+        self.center_slider.options = options
+        if self.center_slider.value not in options:
+            self.center_slider.value = options[0] if len(options) > 0 else self.min_time
+            
+    def _update_colorbar_slider(self):
+        """Update the colorbar slider limits and step according to the filtered data
+        and selected variable. Uses the current time window.
+        """
+        t0 = self.center_slider.value - self._get_window_timedelta() / 2
+        t1 = self.center_slider.value + self._get_window_timedelta() / 2
+        df_win = self.filtered_df[
+            (self.filtered_df['time'] >= t0) &
+            (self.filtered_df['time'] <= t1)
+        ]
+        try:
+            col_min = self._compute_if_needed(df_win[self.plot_var].min())
+            col_max = self._compute_if_needed(df_win[self.plot_var].max())
+            step = (col_max - col_min) / 100. if (col_max - col_min) > 0 else 0.01
+            self.colorbar_slider.min = float(col_min)
+            self.colorbar_slider.max = float(col_max)
+            self.colorbar_slider.step = step
+            q_low = self._compute_if_needed(df_win[self.plot_var].quantile(0.01))
+            q_high = self._compute_if_needed(df_win[self.plot_var].quantile(0.99))
+            self.colorbar_slider.value = [
+                float(q_low),
+                float(q_high)
+            ]
+        except Exception:
+            self.colorbar_slider.min = 0
+            self.colorbar_slider.max = 1
+            self.colorbar_slider.value = [0, 1]
+            
+    def plot_map(self, center, window_td):
+        """Plot the reference map showing mean values of plot_var for each location (lat, lon)
+        within the selected time window.
+        """
+        with self.output:
+            clear_output(wait=True)
+            if self.filtered_df is None or center is None or window_td is None:
+                print("No data selected.")
+                return
+            t0 = center - window_td / 2
+            t1 = center + window_td / 2
+            df_win = self.filtered_df[
+                (self.filtered_df['time'] >= t0) &
+                (self.filtered_df['time'] <= t1)
+            ]
+            ref_df = self._compute_if_needed(
+                df_win.groupby(['latitude', 'longitude'])[self.plot_var].mean()
+            ).reset_index()
+            
+            fig = plt.figure(figsize=self.config.figure_size)
+            ax = plt.axes(projection=ccrs.PlateCarree())
+            ax.add_feature(cfeature.COASTLINE, linewidth=0.8)
+            ax.add_feature(cfeature.LAND, color='lightgray', alpha=0.5)
+            ax.add_feature(cfeature.OCEAN, color='lightblue', alpha=0.3)
+            ax.add_feature(cfeature.BORDERS, linewidth=0.5)
+            
+            if not ref_df.empty:
+                vmin, vmax = self.colorbar_slider.value
+                scatter = ax.scatter(
+                    ref_df['longitude'],
+                    ref_df['latitude'],
+                    s=self.config.scatter_size,
+                    alpha=self.config.scatter_alpha,
+                    c=ref_df[self.plot_var],
+                    vmin=vmin,
+                    vmax=vmax,
+                    cmap=self.config.colormap,
+                    label=f'Differences (n={len(ref_df):,})',
+                    marker='o',
+                    edgecolors='none',
+                    transform=ccrs.PlateCarree()
+                )
+                plt.colorbar(scatter)
+                ax.set_extent(self.map_extent, crs=ccrs.PlateCarree())
+            else:
+                ax.set_global()
+                ax.text(
+                    0.5,
+                    0.5,
+                    'No data in selected window',
+                    ha='center',
+                    va='center',
+                    fontsize=20,
+                    transform=ax.transAxes
+                )
+            gl = ax.gridlines(
+                draw_labels=True,
+                linewidth=1,
+                color='gray',
+                alpha=0.5,
+                linestyle='--'
+            )
+            gl.top_labels = False
+            gl.right_labels = False
+            plt.title(
+                f'{self.config.plot_title}\n({len(ref_df):,} points)\nTime window: {window_td}',
+                fontsize=16,
+                pad=20
+            )
+            plt.legend(loc='upper left', bbox_to_anchor=(0.02, 0.98))
+            plt.tight_layout()
+            plt.show()
+            
+    # Callback methods
+    def _on_type_change(self, change):
+        """Callback for type dropdown change event."""
+        self._update_filtered_df(change['new'])
+        self.window_slider.max = max(self.total_hours, 1)
+        self.window_slider.value = min(self.window_slider.value, self.window_slider.max)
+        self._update_center_slider(self._get_window_timedelta())
+        self._update_colorbar_slider()
+        self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        
+    def _on_refvar_change(self, change):
+        """Callback for reference variable dropdown change event."""
+        self._update_refvar(change['new'])
+        self.window_slider.max = max(self.total_hours, 1)
+        self.window_slider.value = min(self.window_slider.value, self.window_slider.max)
+        self._update_center_slider(self._get_window_timedelta())
+        self._update_colorbar_slider()
+        self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        
+    def _on_window_change(self, change):
+        """Callback for window slider/text change event."""
+        window_td = self._get_window_timedelta()
+        self._update_center_slider(window_td)
+        self._update_colorbar_slider()
+        self.plot_map(self.center_slider.value, window_td)
+        
+    def _on_center_change(self, change):
+        """Callback for center slider change event."""
+        self._update_colorbar_slider()
+        self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        
+    def _on_colorbar_change(self, change):
+        """Callback for colorbar slider change event."""
+        self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        
+    def clear(self):
+        """Clear the visualization output.
+        
+        This method clears the current visualization so users can call setup()
+        again with different parameters without having both visualizations displayed.
+        """
+        with self.output:
+            clear_output(wait=True)
+        
+    def setup(self):
+        """Initialize the widget with default selections and display."""
+        # Initial setup
+        self._update_refvar(self.refvar_dropdown.value)
+        self._update_filtered_df(self.type_dropdown.value)
+        self.window_slider.max = max(self.total_hours, 1)
+        self._update_center_slider(self._get_window_timedelta())
+        self._update_colorbar_slider()
+        
+        # Create and display widget layout
+        widget_box = widgets.VBox([
+            self.refvar_dropdown,
+            self.type_dropdown,
+            self.window_slider,
+            self.window_text,
+            self.center_slider,
+            self.colorbar_slider,
+            self.output
+        ])
+        
+        display(widget_box)
+        
+        # Initial plot
+        self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        
+        return widget_box

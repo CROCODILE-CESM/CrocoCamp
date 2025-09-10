@@ -4,7 +4,7 @@ import argparse
 import sys
 
 from ..utils.config import read_config, validate_config_keys
-from ..workflows.model_obs import process_files, merge_model_obs_to_parquet
+from ..workflows.workflow_model_obs import WorkflowModelObs
 
 
 def main():
@@ -67,36 +67,26 @@ def main():
     try:
         print(f"Reading configuration from: {config_file}")
 
-        # Read and validate config
-        config = read_config(config_file)
-        required_keys = ['model_files_folder', 'obs_seq_in_folder', 'output_folder',
-                         'template_file', 'static_file', 'ocean_geometry',
-                         'perfect_model_obs_dir', 'parquet_folder']
-
-        if config['perfect_model_obs_dir'] is None:
+        # Create workflow instance
+        workflow = WorkflowModelObs.from_config_file(config_file)
+        
+        # Validate that perfect_model_obs_dir is specified
+        if workflow.get_config('perfect_model_obs_dir') is None:
             raise ValueError("perfect_model_obs_dir must be specified in the config file")
 
-        validate_config_keys(config, required_keys)
+        # Run the workflow
+        files_processed = workflow.run(
+            trim_obs=trim_obs,
+            no_matching=no_matching,
+            force_obs_time=force_obs_time,
+            parquet_only=args.parquet_only
+        )
 
         if not args.parquet_only:
-            # Process files
-            files_processed = process_files(
-                config,
-                trim_obs=trim_obs,
-                no_matching=no_matching,
-                force_obs_time=force_obs_time
-            )
-
             print(f"Total files processed: {files_processed}")
             print("Backup saved as: input.nml.backup")
 
-
-        # Convert to parquet
-        print("Converting obs_seq format to parquet and adding some diagnostics data...")
-        merge_model_obs_to_parquet(config, trim_obs)
-        print(f"Parquet data save to: {config['parquet_folder']}")
-
-        print("Script executed succesfully.")
+        print("Script executed successfully.")
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
