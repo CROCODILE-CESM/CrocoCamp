@@ -143,18 +143,7 @@ required_keys = workflow.get_required_config_keys()
 workflow.run()
 ```
 
-### Legacy Function-based API
 
-For backward compatibility, the original function-based API is still available:
-
-```python
-from crococamp.workflows.model_obs import process_files, merge_model_obs_to_parquet
-from crococamp.utils.config import read_config
-
-config = read_config("config.yaml")
-files_processed = process_files(config, trim_obs=True)
-merge_model_obs_to_parquet(config, trim_obs=True)
-```
 
 ## Demo
 
