@@ -8,8 +8,8 @@ class MapConfig:
     All parameters can be overridden during initialization.
     """
     
-    def __init__(self, colormap='cividis', plot_title='Obs relative differences', 
-                 map_extent=None, padding=5.0, figure_size=(18, 10), 
+    def __init__(self, colormap='cividis',
+                 map_extent=None, padding=5.0, figure_size=(10, 12),
                  scatter_size=100, scatter_alpha=0.7, default_window_hours=None,
                  disallowed_plotvars=None):
         """Initialize map configuration.
@@ -26,7 +26,6 @@ class MapConfig:
             disallowed_plotvars: Variables to exclude from plot variable dropdown
         """
         self.colormap = colormap
-        self.plot_title = plot_title
         self.map_extent = map_extent
         self.padding = padding
         self.figure_size = figure_size

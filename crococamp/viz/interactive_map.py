@@ -37,6 +37,7 @@ class InteractiveMapWidget:
         self.total_hours = None
         self.plot_var = None
         self.map_extent = None
+        self.plot_title = None
         
         # Initialize widgets
         self._create_widgets()
@@ -185,7 +186,8 @@ class InteractiveMapWidget:
     def _update_refvar(self, selected_var):
         """Update global variable for the plotted variable."""
         self.plot_var = selected_var
-        
+        self.plot_title = f'{self.plot_var}'
+
     def _update_filtered_df(self, selected_type):
         """Update filtered dataframe and its time metadata for a selected type."""
         self.filtered_df = self._persist_if_needed(
@@ -279,7 +281,7 @@ class InteractiveMapWidget:
                     vmin=vmin,
                     vmax=vmax,
                     cmap=self.config.colormap,
-                    label=f'Differences (n={len(ref_df):,})',
+                    label=f'{self.plot_var} (n={len(ref_df):,})',
                     marker='o',
                     edgecolors='none',
                     transform=ccrs.PlateCarree()
@@ -307,7 +309,7 @@ class InteractiveMapWidget:
             gl.top_labels = False
             gl.right_labels = False
             plt.title(
-                f'{self.config.plot_title}\n({len(ref_df):,} points)\nTime window: {window_td}',
+                f'{self.plot_title}\n({len(ref_df):,} points)\nTime window: {window_td}',
                 fontsize=16,
                 pad=20
             )
