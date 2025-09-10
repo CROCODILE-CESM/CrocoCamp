@@ -8,17 +8,17 @@
 &perfect_model_obs_nml
    read_input_state_from_file = .true.,
    single_file_in             = .false.
-   input_state_files          = "/glade/u/home/emilanese/work/perfect_model_obs_kate/in_mom6/0119-01-31.nc",
+   input_state_files          = "/path/to/in_mom6/mom6.nc",
    write_output_state_to_file = .false.,
    single_file_out            = .false.
-   output_state_files         = "/glade/work/emilanese/perfect_model_obs_kate/out/perfect_output_0029.nc",
+   output_state_files         = "/path/to/out/perfect_output_00.nc",
    output_interval            = 1,
 
    async                      = 0,
    adv_ens_command            = "no_advance_script",
 
-   obs_seq_in_file_name       = "/glade/work/emilanese/perfect_model_obs_kate/trimmed_obs_in/trimmed_obs_seq_0029.in",
-   obs_seq_out_file_name      = "/glade/work/emilanese/perfect_model_obs_kate/out/obs_seq_0029.out",
+   obs_seq_in_file_name       = "/path/to/trimmed_obs_in/trimmed_obs_seq_00.in",
+   obs_seq_out_file_name      = "/path/to/out/obs_seq_0029.out",
    init_time_days             = 151605,
    init_time_seconds          = 61,
    first_obs_days             = -1,
@@ -138,9 +138,9 @@
 &model_nml
    assimilation_period_days     = 5
    assimilation_period_seconds  = 1
-   template_file              = "/glade/u/home/emilanese/work/perfect_model_obs_kate/in_mom6/0119-01-02.nc",
-   static_file                = "/glade/u/home/emilanese/work/perfect_model_obs_kate/reference_nc/g.e30_b06.G_JRA.TL319_t232_zstar_N75.2025.SKEB_DA.stochastic.mom6.h.static.nc",
-   ocean_geometry             = "/glade/u/home/emilanese/work/perfect_model_obs_kate/reference_nc/g.e30_b06.G_JRA.TL319_t232_zstar_N75.2025.SKEB_DA.stochastic.mom6.h.ocean_geometry.nc",
+   template_file              = "/path/to/in_mom6/mom6.nc",
+   static_file                = "/path/to/reference_nc/mom6.static.nc",
+   ocean_geometry             = "/path/to/reference_nc/mom6.ocean_geometry.nc",
    use_pseudo_depth = .true.,
    layer_name = 'zl',
    model_state_variables        = 'so ', 'QTY_SALINITY             ', 'UPDATE',
