@@ -71,3 +71,4 @@ def merge_pair_to_parquet(perf_obs_file, orig_obs_file, parquet_path):
     }
     workflow = WorkflowModelObs(config)
     workflow._merge_pair_to_parquet(perf_obs_file, orig_obs_file, parquet_path)
+    

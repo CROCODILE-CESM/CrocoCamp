@@ -89,7 +89,6 @@ perfect-model-obs -c config.yaml --no-matching
 # Convert existing outputs to parquet only
 perfect-model-obs -c config.yaml --parquet-only
 ```
-
 ### Programmatic Usage (Class-based API)
 
 For Python scripts and Jupyter notebooks, use the class-based API:

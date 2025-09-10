@@ -19,7 +19,6 @@ def read_config(config_file):
     try:
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
-
         for key in config:
             if isinstance(config[key], str):
                 config[key] = resolve_path(config[key], config_file)

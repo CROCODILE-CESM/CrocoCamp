@@ -43,7 +43,6 @@ Longer term, tools for **binning and averaging data prior to interpolation** int
 
 - **Dependencies:**  
   - Use only those listed in `pyproject.toml`.
-  - Propose/add new dependencies only when necessary and document why in PRs.
 
 ---
 
