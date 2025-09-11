@@ -10,10 +10,17 @@ class MapConfig:
     All parameters can be overridden during initialization.
     """
     
-    def __init__(self, colormap: str = 'cividis',
-                 map_extent: Optional[Tuple[float, float, float, float]] = None, padding: float = 5.0, figure_size: Tuple[int, int] = (10, 12),
-                 scatter_size: int = 100, scatter_alpha: float = 0.7, default_window_hours: Optional[int] = None,
-                 disallowed_plotvars: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        colormap: str = 'cividis',
+        map_extent: Optional[Tuple[float, float, float, float]] = None,
+        padding: float = 5.0,
+        figure_size: Tuple[int, int] = (10, 12),
+        scatter_size: int = 100,
+        scatter_alpha: float = 0.7,
+        default_window_hours: Optional[int] = None,
+        disallowed_plotvars: Optional[List[str]] = None
+    ) -> None:
         """Initialize map configuration.
         
         Args:
