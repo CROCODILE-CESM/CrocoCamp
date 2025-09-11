@@ -81,6 +81,11 @@ class WorkflowModelObs(workflow.Workflow):
         Returns:
             Number of files processed
         """
+
+        # Check that perfect_model_obs_dir is set
+        if self.config.get('perfect_model_obs_dir') is None:
+            raise ValueError("Configuration parameter 'perfect_model_obs_dir' missing: did you specify the path to the perfect_model_obs executable?")
+
         # Print configuration
         self._print_workflow_config(trim_obs)
         

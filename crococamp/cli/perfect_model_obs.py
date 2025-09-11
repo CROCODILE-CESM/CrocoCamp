@@ -64,33 +64,28 @@ def main():
     no_matching = args.no_matching
     force_obs_time = args.force_obs_time
 
-    try:
-        print(f"Reading configuration from: {config_file}")
+    print(f"Reading configuration from: {config_file}")
 
-        # Create workflow instance
-        workflow = WorkflowModelObs.from_config_file(config_file)
-        
-        # Validate that perfect_model_obs_dir is specified
-        if workflow.get_config('perfect_model_obs_dir') is None:
-            raise ValueError("perfect_model_obs_dir must be specified in the config file")
+    # Create workflow instance
+    workflow = WorkflowModelObs.from_config_file(config_file)
 
-        # Run the workflow
-        files_processed = workflow.run(
-            trim_obs=trim_obs,
-            no_matching=no_matching,
-            force_obs_time=force_obs_time,
-            parquet_only=args.parquet_only
-        )
+    # Validate that perfect_model_obs_dir is specified
+    if workflow.get_config('perfect_model_obs_dir') is None:
+        raise ValueError("perfect_model_obs_dir must be specified in the config file")
 
-        if not args.parquet_only:
-            print(f"Total files processed: {files_processed}")
-            print("Backup saved as: input.nml.backup")
+    # Run the workflow
+    files_processed = workflow.run(
+        trim_obs=trim_obs,
+        no_matching=no_matching,
+        force_obs_time=force_obs_time,
+        parquet_only=args.parquet_only
+    )
 
-        print("Script executed successfully.")
+    if not args.parquet_only:
+        print(f"Total files processed: {files_processed}")
+        print("Backup saved as: input.nml.backup")
 
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+    print("Script executed successfully.")
 
 
 if __name__ == "__main__":
