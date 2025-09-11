@@ -2,10 +2,11 @@
 
 import numpy as np
 import pydartdiags.obs_sequence.obs_sequence as obsq
+from shapely.geometry import Polygon
 from shapely.vectorized import contains
 
 
-def trim_obs_seq_in(obs_in_file, hull_polygon, hull_points, trimmed_obs_file):
+def trim_obs_seq_in(obs_in_file: str, hull_polygon: Polygon, hull_points: np.ndarray, trimmed_obs_file: str) -> None:
     """
     trim obs_seq.in file to preserve only observation within specificed geographical area
 

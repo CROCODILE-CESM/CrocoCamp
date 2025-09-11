@@ -3,13 +3,14 @@
 import glob
 import os
 from datetime import datetime
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 
-def get_sorted_files(directory, pattern="*"):
+def get_sorted_files(directory: str, pattern: str = "*") -> List[str]:
     """Get sorted list of files in directory matching pattern."""
     file_pattern = os.path.join(directory, pattern)
     files = glob.glob(file_pattern)
@@ -17,7 +18,7 @@ def get_sorted_files(directory, pattern="*"):
     return sorted(files)
 
 
-def timestamp_to_days_seconds(timestamp):
+def timestamp_to_days_seconds(timestamp: np.datetime64) -> Tuple[int, int]:
     """Convert YYYYMMDD HH:MM:SS timestamp to number of days, number of
     seconds since 1601-01-01
 
@@ -38,7 +39,7 @@ def timestamp_to_days_seconds(timestamp):
     return days, seconds_in_day
 
 
-def get_model_time_in_days_seconds(model_in_file):
+def get_model_time_in_days_seconds(model_in_file: str) -> Tuple[int, int]:
     """Get model time in days and seconds from model input file."""
 
     with xr.open_dataset(model_in_file) as model_ds:
@@ -51,7 +52,7 @@ def get_model_time_in_days_seconds(model_in_file):
     return timestamp_to_days_seconds(model_time[0])
 
 
-def get_obs_time_in_days_seconds(obs_in_file):
+def get_obs_time_in_days_seconds(obs_in_file: str) -> Tuple[int, int]:
     """Get obs_seq.in time in days and seconds from obs input file."""
     import pydartdiags.obs_sequence.obs_sequence as obsq
 

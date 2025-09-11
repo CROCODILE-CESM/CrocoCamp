@@ -32,15 +32,17 @@ Longer term, tools for **binning and averaging data prior to interpolation** int
   - Use idiomatic Python (3.8+).  
   - Prefer clear NumPy or Google-style docstrings.  
   - Write modular code with clear separation of concerns.
+  - Favor namespace imports (e.g. from `crococamp.io import file_utils`)
 
 - **Structure & Naming:**  
   - All code is under `crococamp/` with logical submodules (`io`, `utils`, `cli`, `workflows`).
   - Use CamelCase for classes, snake_case for functions/variables.
   - Keep the public API minimal and clean.
+  - The package offers class-based workflows (e.g., `WorkflowModelObs`) that encapsulate configuration, state, and all workflow logic.
+  - Keep pure utilities (`crococamp/io`, `crococamp/utils`) as stateless function modules.
 
 - **Dependencies:**  
-  - Use only those listed in `pyproject.toml` and `requirements.txt`.
-  - Propose/add new dependencies only when necessary and document why in PRs.
+  - Use only those listed in `pyproject.toml`.
 
 ---
 
@@ -48,17 +50,6 @@ Longer term, tools for **binning and averaging data prior to interpolation** int
 
 - CLI entry points should live in `crococamp/cli/crococamp_cli.py`.
 - Existing scripts like `ref_files/perfect_model_obs_split_loop.py` should eventually be wrapped as CLI commands.
-
----
-
-## Protype references
-
-- Files in `ref_files/` contains current prototypes of the available functionalities.
-- Use files in `ref_files/` as references for the workflows
-- Use the jupyter notebook `ref_files/model-obs-comparison-kate.ipynb` as references for the example to visualiza model-obs comparison
-- Use the jupyter notebook `ref_files/regridding_20250716.ipynb` as reference for the model-model comparison workflow
-- `ref_files/input.nml` is an example of input namelist file that is used by DART's perfect_model_obs script when called by `ref_files/perfect_model_obs_split_loop.py`
-- `ref_files/config.yaml` is the current configuration file example
 
 ## Documentation
 
