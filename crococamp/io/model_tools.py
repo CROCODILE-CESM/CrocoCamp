@@ -4,9 +4,10 @@ import numpy as np
 import xarray as xr
 from scipy.spatial import ConvexHull
 from shapely.geometry import Polygon
+from typing import Tuple
 
 
-def get_model_boundaries(model_file, margin=0.0):
+def get_model_boundaries(model_file: str, margin: float = 0.0) -> Tuple[Polygon, np.ndarray]:
     """Get geographical boundaries from model input file using convex hull."""
 
     with xr.open_dataset(model_file) as ds:
