@@ -136,13 +136,11 @@ class WorkflowModelObs(workflow.Workflow):
 
         # Process files
         if no_matching:
-            counter = 0
-            for model_in_file, obs_in_file in zip(model_in_files, obs_in_files):
+            for counter, (model_in_file, obs_in_file) in enumerate(zip(model_in_files, obs_in_files)):
                 self._process_model_obs_pair(
                     model_in_file, obs_in_file, trim_obs, counter,
                     hull_polygon, hull_points, force_obs_time
                 )
-                counter += 1
         else:
             counter = self._process_with_time_matching(
                 model_in_files, obs_in_files, trim_obs,
