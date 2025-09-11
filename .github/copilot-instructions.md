@@ -2,7 +2,6 @@
 
 Welcome, Copilot!  
 This repository is for **CrocoCamp**, a Python toolset for harmonizing and comparing ocean model outputs and observation datasets.  
-**You are to work only on the `ghca` branch.**
 
 ---
 
@@ -12,9 +11,8 @@ CrocoCamp is designed to streamline workflows for comparing, regridding, and eva
 The repository will support **three main workflows**:
 
 1. **Model vs. Observational Data**  
-   - Compare model output to point observations (e.g., DART obs_seq.in).  
-   - This workflow is currently implemented in `perfect_model_obs_split_loop.py`.
-
+   - Compare model output to point observations (e.g., DART obs_seq.in).
+     
 2. **Model vs. Model Data**  
    - Compare outputs from different ocean models, possibly with different grids or resolutions.
 
@@ -32,24 +30,25 @@ Longer term, tools for **binning and averaging data prior to interpolation** int
   - Use idiomatic Python (3.8+).  
   - Prefer clear NumPy or Google-style docstrings.  
   - Write modular code with clear separation of concerns.
-  - Favor namespace imports (e.g. from `crococamp.io import file_utils`)
+  - Follow style guidelines as in PEP 8, PEP 257. Each python file should have a grade of 8 or more when run through `pylint`.
+  - Follow PEP 484 for type hinting.
+  - The code should compatible with any version of Python 3.9 or newer.
 
 - **Structure & Naming:**  
   - All code is under `crococamp/` with logical submodules (`io`, `utils`, `cli`, `workflows`).
   - Use CamelCase for classes, snake_case for functions/variables.
   - Keep the public API minimal and clean.
-  - The package offers class-based workflows (e.g., `WorkflowModelObs`) that encapsulate configuration, state, and all workflow logic.
-  - Keep pure utilities (`crococamp/io`, `crococamp/utils`) as stateless function modules.
+  - Keep in mind that this code is used by non-experienced Python users too, so any design solution that is advanced should be justified and well documented and/or commented.
 
 - **Dependencies:**  
   - Use only those listed in `pyproject.toml`.
+  - Propose/add new dependencies only when necessary and document why in PRs.
 
 ---
 
 ## Command-Line Interface
 
 - CLI entry points should live in `crococamp/cli/crococamp_cli.py`.
-- Existing scripts like `ref_files/perfect_model_obs_split_loop.py` should eventually be wrapped as CLI commands.
 
 ## Documentation
 
@@ -70,14 +69,6 @@ Longer term, tools for **binning and averaging data prior to interpolation** int
 
 - Do **not** commit generated data files (e.g., `.parquet`, `.pkl`) or large outputs.
 - Respect and update `.gitignore` as needed.
-
----
-
-## Branch-Specific Instructions
-
-- **Work only on the `ghca` branch.**
-- Do not open PRs against `main` unless explicitly instructed.
-- Comment or document any changes that are experimental or meant for future refactoring.
 
 ---
 
