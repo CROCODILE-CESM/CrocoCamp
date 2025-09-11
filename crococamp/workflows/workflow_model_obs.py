@@ -4,7 +4,7 @@ import glob
 import os
 import shutil
 import subprocess
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Dict
 
 import dask.dataframe as dd
 import numpy as np
@@ -27,7 +27,17 @@ class WorkflowModelObs(workflow.Workflow):
     including trimming observations to model grid boundaries, running perfect_model_obs,
     and converting results to parquet format for analysis.
     """
-    
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize model-observation workflow with configuration.
+
+        Args:
+            config: Configuration dictionary containing workflow parameters
+        """
+
+        super().__init__(config)
+
+
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys."""
         return [
@@ -42,7 +52,8 @@ class WorkflowModelObs(workflow.Workflow):
         ]
     
     def run(self, trim_obs: bool = False, no_matching: bool = False, 
-            force_obs_time: bool = False, parquet_only: bool = False) -> int:
+            force_obs_time: bool = False, parquet_only: bool = False,
+            clear_output: bool = False) -> int:
         """Execute the complete model-observation workflow.
         
         Args:
@@ -50,11 +61,25 @@ class WorkflowModelObs(workflow.Workflow):
             no_matching: Whether to skip time-matching and assume 1:1 correspondence
             force_obs_time: Whether to assign observations reference time to model files
             parquet_only: Whether to skip building perfect obs and directly convert to parquet
+            clear_output: Whether to clear output folder before running the workflow (default: False)
             
         Returns:
             Number of files processed
         """
         files_processed = 0
+
+        if clear_output:
+            print("Clearing all output folders...")
+            output_folders = [
+                self.config['parquet_folder'],
+                self.config['input_nml_bck'],
+                self.config['trimmed_obs_folder'],
+                self.config['output_folder']
+            ]
+            for folder in output_folders:
+                print("Clearing folder:", folder)
+                config_utils.clear_folder(folder)
+            print("All output folders cleared.")
         
         if not parquet_only:
             files_processed = self.process_files(
@@ -69,7 +94,8 @@ class WorkflowModelObs(workflow.Workflow):
         print(f"Parquet data saved to: {self.config['parquet_folder']}")
         
         return files_processed
-    
+
+
     def process_files(self, trim_obs: bool = False, no_matching: bool = False, 
                      force_obs_time: bool = False) -> int:
         """Process model and observation files.
@@ -87,57 +113,44 @@ class WorkflowModelObs(workflow.Workflow):
         if self.config.get('perfect_model_obs_dir') is None:
             raise ValueError("Configuration parameter 'perfect_model_obs_dir' missing: did you specify the path to the perfect_model_obs executable?")
 
+        # Initialize base input.nml
+        self._initialize_model_namelist()
+        
         # Print configuration
         self._print_workflow_config(trim_obs)
-        
+
         # Validate configuration parameters
         self._validate_workflow_paths(trim_obs)
-        
-        # Setup namelist
-        input_nml = os.path.join(self.config['perfect_model_obs_dir'], "input.nml")
-        print("Setting up symlink for input.nml...")
-        namelist.symlink_to_namelist(input_nml)
-        
-        try:
-            # Create backup and read namelist
-            shutil.copy2(input_nml, "input.nml.backup")
-            print("Created backup: input.nml.backup")
-            namelist_content = namelist.read_namelist(input_nml)
-            
-            # Update model_nml section
-            print("Updating &model_nml section...")
-            namelist_content = self._update_model_namelist(namelist_content)
-            
-            # Get and validate file lists
-            model_in_files = file_utils.get_sorted_files(self.config['model_files_folder'], "*.nc")
-            obs_in_files = file_utils.get_sorted_files(self.config['obs_seq_in_folder'], "*")
-            
-            print(f"Found {len(model_in_files)} files to process")
-            
-            # Get model boundaries if trimming observations
-            hull_polygon, hull_points = None, None
-            if trim_obs:
-                print("Getting model boundaries...")
-                hull_polygon, hull_points = model_tools.get_model_boundaries(self.config['ocean_geometry'])
-            
-            # Process files
-            if no_matching:
-                counter = 0
-                for model_in_file, obs_in_file in zip(model_in_files, obs_in_files):
-                    self._process_model_obs_pair(
-                        model_in_file, obs_in_file, trim_obs, counter, 
-                        hull_polygon, hull_points, namelist_content, force_obs_time
-                    )
-                    counter += 1
-            else:
-                counter = self._process_with_time_matching(
-                    model_in_files, obs_in_files, trim_obs,
-                    hull_polygon, hull_points, namelist_content, force_obs_time
+
+        # Get and validate file lists
+        model_in_files = file_utils.get_sorted_files(self.config['model_files_folder'], "*.nc")
+        obs_in_files = file_utils.get_sorted_files(self.config['obs_seq_in_folder'], "*")
+
+        print(f"Found {len(model_in_files)} files to process")
+
+        # Get model boundaries if trimming observations
+        hull_polygon, hull_points = None, None
+        if trim_obs:
+            print("Getting model boundaries...")
+            hull_polygon, hull_points = model_tools.get_model_boundaries(self.config['ocean_geometry'])
+
+        # Process files
+        if no_matching:
+            counter = 0
+            for model_in_file, obs_in_file in zip(model_in_files, obs_in_files):
+                self._process_model_obs_pair(
+                    model_in_file, obs_in_file, trim_obs, counter,
+                    hull_polygon, hull_points, force_obs_time
                 )
-                
-        finally:
-            # Cleanup
-            namelist.cleanup_namelist_symlink()
+                counter += 1
+        else:
+            counter = self._process_with_time_matching(
+                model_in_files, obs_in_files, trim_obs,
+                hull_polygon, hull_points, force_obs_time
+            )
+
+        # Cleanup
+        self._namelist.cleanup_namelist_symlink()
         
         return len(model_in_files)
     
@@ -178,13 +191,12 @@ class WorkflowModelObs(workflow.Workflow):
         )
 
         shutil.rmtree(tmp_parquet_folder)
-    
+
     def _print_workflow_config(self, trim_obs: bool) -> None:
         """Print workflow configuration."""
         print("Configuration:")
         print(f"  perfect_model_obs_dir: {self.config['perfect_model_obs_dir']}")
-        input_nml = os.path.join(self.config['perfect_model_obs_dir'], "input.nml")
-        print(f"  input_nml: {input_nml}")
+        print(f"  input_nml: {self._namelist.namelist_path}")
         print(f"  model_files_folder: {self.config['model_files_folder']}")
         print(f"  obs_seq_in_folder: {self.config['obs_seq_in_folder']}")
         print(f"  output_folder: {self.config['output_folder']}")
@@ -226,22 +238,23 @@ class WorkflowModelObs(workflow.Workflow):
         config_utils.check_nc_file(self.config['static_file'], "static_file")
         config_utils.check_nc_file(self.config['ocean_geometry'], "ocean_geometry")
     
-    def _update_model_namelist(self, namelist_content: str) -> str:
-        """Update model namelist parameters."""
-        namelist_content = namelist.update_namelist_param(
-            namelist_content, "model_nml", "template_file", self.config['template_file']
+    def _initialize_model_namelist(self) -> None:
+        """Initialize model namelist parameters."""
+        self._namelist = namelist.Namelist(self.config['input_nml'])
+
+        self._namelist.update_namelist_param(
+            "model_nml", "template_file", self.config['template_file']
         )
-        namelist_content = namelist.update_namelist_param(
-            namelist_content, "model_nml", "static_file", self.config['static_file']
+        self._namelist.update_namelist_param(
+            "model_nml", "static_file", self.config['static_file']
         )
-        namelist_content = namelist.update_namelist_param(
-            namelist_content, "model_nml", "ocean_geometry", self.config['ocean_geometry']
+        self._namelist.update_namelist_param(
+            "model_nml", "ocean_geometry", self.config['ocean_geometry']
         )
-        return namelist_content
-    
+
     def _process_with_time_matching(self, model_in_files: List[str], obs_in_files: List[str],
                                   trim_obs: bool, hull_polygon: Optional[Any], 
-                                  hull_points: Optional[np.ndarray], namelist_content: str, 
+                                  hull_points: Optional[np.ndarray],
                                   force_obs_time: bool) -> int:
         """Process files with time-matching logic."""
         counter = 0
@@ -286,7 +299,7 @@ class WorkflowModelObs(workflow.Workflow):
                             # Call perfect_model_obs on the pair
                             self._process_model_obs_pair(
                                 tmp_model_in_file, obs_in_file, trim_obs, counter,
-                                hull_polygon, hull_points, namelist_content, force_obs_time
+                                hull_polygon, hull_points, force_obs_time
                             )
 
                             # Remove temporary file if it was created
@@ -300,10 +313,9 @@ class WorkflowModelObs(workflow.Workflow):
     
     def _process_model_obs_pair(self, model_in_file: str, obs_in_file: str, 
                                trim_obs: bool, counter: int, hull_polygon: Optional[Any],
-                               hull_points: Optional[np.ndarray], namelist_content: str, 
-                               force_obs_time: bool) -> None:
+                               hull_points: Optional[np.ndarray], force_obs_time: bool) -> None:
+
         """Process a single model-observation file pair."""
-        input_nml = os.path.join(self.config['perfect_model_obs_dir'], "input.nml")
         model_in_filename = os.path.basename(model_in_file)
         obs_in_filename = os.path.basename(obs_in_file)
         file_number = f"{counter:04d}"
@@ -331,51 +343,51 @@ class WorkflowModelObs(workflow.Workflow):
         print(f"  Obs output file: {obs_output_filename}")
 
         # Update namelist parameters
-        namelist_content = namelist.update_namelist_param(
-            namelist_content, "perfect_model_obs_nml", "input_state_files", model_in_file
+        self._namelist.update_namelist_param(
+            "perfect_model_obs_nml", "input_state_files", model_in_file
         )
-        namelist_content = namelist.update_namelist_param(
-            namelist_content, "perfect_model_obs_nml", "output_state_files", perfect_output_path
+        self._namelist.update_namelist_param(
+            "perfect_model_obs_nml", "output_state_files", perfect_output_path
         )
-        namelist_content = namelist.update_namelist_param(
-            namelist_content, "perfect_model_obs_nml", "obs_seq_in_file_name", obs_in_file_nml
+        self._namelist.update_namelist_param(
+            "perfect_model_obs_nml", "obs_seq_in_file_name", obs_in_file_nml
         )
-        namelist_content = namelist.update_namelist_param(
-            namelist_content, "perfect_model_obs_nml", "obs_seq_out_file_name", obs_output_path
+        self._namelist.update_namelist_param(
+            "perfect_model_obs_nml", "obs_seq_out_file_name", obs_output_path
         )
 
         if not force_obs_time:
             # Assign time to model file
             print("Retrieving model time from model input file and updating namelist...")
             model_time_days, model_time_seconds = file_utils.get_model_time_in_days_seconds(model_in_file)
-            namelist_content = namelist.update_namelist_param(
-                namelist_content, "perfect_model_obs_nml", "init_time_days", model_time_days,
+            self._namelist.update_namelist_param(
+                "perfect_model_obs_nml", "init_time_days", model_time_days,
                 string=False
             )
-            namelist_content = namelist.update_namelist_param(
-                namelist_content, "perfect_model_obs_nml", "init_time_seconds", model_time_seconds,
+            self._namelist.update_namelist_param(
+                "perfect_model_obs_nml", "init_time_seconds", model_time_seconds,
                 string=False
             )
         else:
             # Assign time to model file
             print("Retrieving obs time from obs_seq and updating namelist...")
             obs_time_days, obs_time_seconds = file_utils.get_obs_time_in_days_seconds(obs_in_file)
-            namelist_content = namelist.update_namelist_param(
-                namelist_content, "perfect_model_obs_nml", "init_time_days", obs_time_days,
+            self._namelist.update_namelist_param(
+                "perfect_model_obs_nml", "init_time_days", obs_time_days,
                 string=False
             )
-            namelist_content = namelist.update_namelist_param(
-                namelist_content, "perfect_model_obs_nml", "init_time_seconds", obs_time_seconds,
+            self._namelist.update_namelist_param(
+                "perfect_model_obs_nml", "init_time_seconds", obs_time_seconds,
                 string=False
             )
 
         # Write updated namelist
-        namelist.write_namelist(input_nml, namelist_content)
+        self._namelist.write_namelist()
         input_nml_bck_path = os.path.join(
             self.config['input_nml_bck'], 
             f"input.nml_{file_number}.backup"
         )
-        namelist.write_namelist(input_nml_bck_path, namelist_content)
+        self._namelist.write_namelist(input_nml_bck_path)
         print("input.nml modified.")
         print()
 

@@ -55,6 +55,14 @@ def main() -> None:
         default=False
     )
 
+    parser.add_argument(
+        '--clear-output',
+        action='store_true',
+        help="Clear all output folders defined in config file before processing files (default: False)",
+        required=False,
+        default=False
+    )
+
     args = parser.parse_args()
     if args.parquet_only and args.trim:
         print("Warning: -t/--trim has no effect when --parquet-only is used.")
@@ -63,6 +71,7 @@ def main() -> None:
     trim_obs = args.trim
     no_matching = args.no_matching
     force_obs_time = args.force_obs_time
+    clear_output = args.clear_output
 
     print(f"Reading configuration from: {config_file}")
 
@@ -78,7 +87,8 @@ def main() -> None:
         trim_obs=trim_obs,
         no_matching=no_matching,
         force_obs_time=force_obs_time,
-        parquet_only=args.parquet_only
+        parquet_only=args.parquet_only,
+        clear_output=clear_output
     )
 
     if not args.parquet_only:

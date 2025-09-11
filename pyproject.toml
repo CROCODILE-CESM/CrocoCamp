@@ -19,8 +19,6 @@ dependencies = [
     "scipy",
     "shapely",
     "xarray",
-    "xesmf",
-    "xgcm",
 ]
 
 [project.scripts]

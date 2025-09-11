@@ -2,92 +2,128 @@
 
 import os
 import re
+import shutil
 import tempfile
 from typing import Any, Union
 
+class Namelist():
+    """Class to handle file operations related to perfect_model_obs input.nml
+    namelist file.
 
-def read_namelist(file_path: str) -> str:
-    """Read namelist file and return as string."""
-    if not os.path.isfile(file_path):
-        raise FileNotFoundError(f"Namelist file '{file_path}' does not exist")
+    It includes methods to read, write, and update parameters, as well as
+    generating necessary symlink for perfect_model_obs to execute correctly.
+    """
 
-    try:
-        with open(file_path, 'r') as f:
-            return f.read()
-    except IOError as e:
-        raise IOError(f"Could not read namelist file '{file_path}': {e}")
+    def __init__(self, namelist_path: str) -> None:
+        """Initialize Namelist with path to namelist file.
 
+        Arguments:
+        namelist_path: Path to the namelist file
+        """
 
-def write_namelist(file_path: str, content: str) -> None:
-    """Write content to namelist file."""
-    try:
-        with open(file_path, 'w') as f:
-            f.write(content)
-    except IOError as e:
-        raise IOError(f"Could not write namelist file '{file_path}': {e}")
+        print("Setting up symlink for input.nml...")
+        self.namelist_path = namelist_path
+        self.symlink_to_namelist()
 
+        # Create backup and read namelist
+        shutil.copy2(self.namelist_path, "input.nml.backup")
+        print("Created backup: input.nml.backup")
 
-def symlink_to_namelist(input_nml: str) -> None:
-    """Create a symbolic link to a namelist file."""
-    if not os.path.isfile(input_nml):
-        raise FileNotFoundError(f"Source namelist file '{input_nml}' does not exist")
+        self.content = self.read_namelist()
 
-    try:
-        dest = os.path.join(os.getcwd(), "input.nml")
-        if dest == input_nml:
-            raise ValueError("Source and destination for symlink are the same.")
-        if os.path.islink(dest):
-            os.remove(dest)
-            print(f"Symlink '{dest}' removed.")
-        elif os.path.exists(dest):
-            raise ValueError(f"'{dest}' exists and is not a symlink. Not removing nor continuing execution.")
-        os.symlink(input_nml, dest)
-        print(f"Symlink {dest} -> '{input_nml}' created.")
-    except OSError as e:
-        raise OSError(f"Could not create symlink from '{input_nml}' to '{dest}': {e}")
+    def read_namelist(self) -> str:
+        """Read namelist file and return as string."""
+        if not os.path.isfile(self.namelist_path):
+            raise FileNotFoundError(f"Namelist file '{self.namelist_path}' does not exist")
 
-def cleanup_namelist_symlink() -> None:
-    """Remove the symbolic link to the namelist file."""
-    dest = os.path.join(os.getcwd(), "input.nml")
-    try:
-        if os.path.islink(dest):
-            os.remove(dest)
-            print(f"Symlink '{dest}' removed.")
-        elif os.path.exists(dest):
-            print(f"'{dest}' exists but is not a symlink. Not removing.")
-        else:
-            print(f"No symlink '{dest}' found to remove.")
-    except OSError as e:
-        raise OSError(f"Could not remove symlink '{dest}': {e}")
+        try:
+            with open(self.namelist_path, 'r') as f:
+                return f.read()
+        except IOError as e:
+            raise IOError(f"Could not read namelist file '{self.namelist_path}': {e}")
 
-def update_namelist_param(content: str, section: str, param: str, value: Union[str, int, float, bool], string: bool = True) -> str:
-    """Update a parameter in a namelist section."""
-    section_pattern = f'&{section}'
+    def write_namelist(self, namelist_path : str = None, content : str = None) -> None:
+        """Write content to namelist file."""
+        if namelist_path is None:
+            namelist_path = self.namelist_path
+        if content is None:
+            content = self.content
 
-    lines = content.split('\n')
-    in_section = False
-    updated = False
+        try:
+            with open(namelist_path, 'w') as f:
+                f.write(content)
+        except IOError as e:
+            raise IOError(f"Could not write namelist file '{namelist_path}': {e}")
 
-    for j, line in enumerate(lines):
-        if line.strip().startswith(section_pattern):
-            in_section = True
-            continue
+    def symlink_to_namelist(self) -> None:
+        """Create a symbolic link to a namelist file."""
+        if not os.path.isfile(self.namelist_path):
+            raise FileNotFoundError(f"Source namelist file '{self.namelist_path}' does not exist")
 
-        if in_section and line.strip().startswith('&') and not line.strip().startswith(section_pattern):
-            in_section = False
-            continue
+        try:
+            self.dest = os.path.join(os.getcwd(), "input.nml")
+            if self.dest == self.namelist_path:
+                raise ValueError("Source and self.destination for symlink are the same.")
+            if os.path.islink(self.dest):
+                os.remove(self.dest)
+                print(f"Symlink '{self.dest}' removed.")
+            elif os.path.exists(self.dest):
+                raise ValueError(f"'{self.dest}' exists and is not a symlink. Not removing nor continuing execution.")
+            os.symlink(self.namelist_path, self.dest)
+            print(f"Symlink {self.dest} -> '{self.namelist_path}' created.")
+        except OSError as e:
+            raise OSError(f"Could not create symlink from '{self.namelist_path}' to '{self.dest}': {e}")
 
-        if in_section:
-            param_pattern = rf'^\s*{re.escape(param)}\s*='
-            if re.match(param_pattern, line):
-                if string:
-                    lines[j] = f'   {param.ljust(27)}= "{value}",'
-                else:
-                    lines[j] = f'   {param.ljust(27)}= {value},'
-                updated = True
-                break
+    def cleanup_namelist_symlink(self) -> None:
+        """Remove the symbolic link to the namelist file."""
+        try:
+            if os.path.islink(self.dest):
+                os.remove(self.dest)
+                print(f"Symlink '{self.dest}' removed.")
+            elif os.path.exists(self.dest):
+                print(f"'{self.dest}' exists but is not a symlink. Not removing.")
+            else:
+                print(f"No symlink '{self.dest}' found to remove.")
+        except OSError as e:
+            raise OSError(f"Could not remove symlink '{self.dest}': {e}")
 
-    if not updated:
-        raise ValueError(f"Parameter '{param}' not found in section '&{section}'")
+    def update_namelist_param(self, section: str, param: str, value: Union[str, int, float, bool], string: bool = True) -> None:
+        """Update a parameter in a namelist section.
 
-    return '\n'.join(lines)
+        Arguments:
+        section: Namelist section (without initial '&')
+        param: Parameter name to update
+        value: New value for the parameter
+        string: Whether the value is a string (True) or a number (False)
+                (default: True)
+        """
+
+        section_pattern = f'&{section}'
+
+        lines = self.content.split('\n')
+        in_section = False
+        updated = False
+
+        for j, line in enumerate(lines):
+            if line.strip().startswith(section_pattern):
+                in_section = True
+                continue
+
+            if in_section and line.strip().startswith('&') and not line.strip().startswith(section_pattern):
+                in_section = False
+                continue
+
+            if in_section:
+                param_pattern = rf'^\s*{re.escape(param)}\s*='
+                if re.match(param_pattern, line):
+                    if string:
+                        lines[j] = f'   {param.ljust(27)}= "{value}",'
+                    else:
+                        lines[j] = f'   {param.ljust(27)}= {value},'
+                    updated = True
+                    break
+
+        if not updated:
+            raise ValueError(f"Parameter '{param}' not found in section '&{section}'")
+
+        self.content = '\n'.join(lines)
