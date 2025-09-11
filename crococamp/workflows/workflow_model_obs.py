@@ -243,6 +243,12 @@ class WorkflowModelObs(workflow.Workflow):
         self._namelist = namelist.Namelist(self.config['input_nml'])
 
         self._namelist.update_namelist_param(
+            "model_nml", "assimilation_period_days", self.config['time_window']['days'], string=False
+        )
+        self._namelist.update_namelist_param(
+            "model_nml", "assimilation_period_seconds", self.config['time_window']['seconds'], string=False
+        )
+        self._namelist.update_namelist_param(
             "model_nml", "template_file", self.config['template_file']
         )
         self._namelist.update_namelist_param(

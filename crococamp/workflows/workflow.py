@@ -22,7 +22,7 @@ class Workflow(ABC):
         """
         self.config = config
         self._validate_config()
-    
+
     @classmethod
     def from_config_file(cls: Type['Workflow'], config_file: str, **kwargs: Any) -> 'Workflow':
         """Create workflow instance from configuration file.

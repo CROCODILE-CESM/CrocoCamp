@@ -1,5 +1,6 @@
 """Configuration utilities for CrocoCamp workflows."""
 
+from datetime import timedelta
 import os
 from typing import Any, Dict, List
 import yaml
@@ -26,6 +27,7 @@ def read_config(config_file: str) -> Dict[str, Any]:
                 config[key] = resolve_path(config[key], config_file)
 
         config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
+        config = convert_time_window(config)
         return config
     except yaml.YAMLError as e:
         raise ValueError(f"Error parsing YAML file: {e}")
@@ -44,7 +46,12 @@ def convert_time_window(config: Dict[str, Any]) -> Dict[str, Any]:
     days_in_month = 30
     days_in_year = 365
 
+    keys = ["years", "months", "weeks", "days", "hours", "minutes", "seconds"]
     time_window_dict = config.get("time_window", None)
+    for key in keys:
+        if key not in time_window_dict:
+            time_window_dict[key] = 0
+
     years = time_window_dict["years"]
     months = time_window_dict["months"]
     weeks = time_window_dict["weeks"]
