@@ -1,14 +1,16 @@
 """Interactive map widget for model-observation comparison visualization."""
 
 import re
-import pandas as pd
-import dask.dataframe as dd
-import matplotlib.pyplot as plt
+from datetime import timedelta
+from typing import Any, Optional, Tuple, Union
+
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import dask.dataframe as dd
 import ipywidgets as widgets
+import matplotlib.pyplot as plt
+import pandas as pd
 from IPython.display import display, clear_output
-from datetime import timedelta
 
 from .config import MapConfig
 
@@ -20,7 +22,7 @@ class InteractiveMapWidget:
     patterns in model-observation differences with support for both dask and pandas DataFrames.
     """
     
-    def __init__(self, dataframe, config=None):
+    def __init__(self, dataframe: Union[pd.DataFrame, dd.DataFrame], config: Optional[MapConfig] = None) -> None:
         """Initialize the interactive map widget.
         
         Args:
@@ -44,23 +46,23 @@ class InteractiveMapWidget:
         self._setup_callbacks()
         self._calculate_map_extent()
         
-    def _is_dask_dataframe(self):
+    def _is_dask_dataframe(self) -> bool:
         """Check if the dataframe is a dask DataFrame."""
         return hasattr(self.df, 'compute')
         
-    def _compute_if_needed(self, series_or_df):
+    def _compute_if_needed(self, series_or_df: Union[pd.Series, pd.DataFrame, dd.Series, dd.DataFrame]) -> Union[pd.Series, pd.DataFrame]:
         """Compute dask series/dataframe if needed, otherwise return as-is."""
         if hasattr(series_or_df, 'compute'):
             return series_or_df.compute()
         return series_or_df
         
-    def _persist_if_needed(self, df):
+    def _persist_if_needed(self, df: Union[pd.DataFrame, dd.DataFrame]) -> Union[pd.DataFrame, dd.DataFrame]:
         """Persist dask dataframe if needed, otherwise return as-is."""
         if hasattr(df, 'persist'):
             return df.persist()
         return df
         
-    def _calculate_map_extent(self):
+    def _calculate_map_extent(self) -> None:
         """Calculate map extent from data if not provided in config."""
         if self.config.map_extent is not None:
             self.map_extent = self.config.map_extent
@@ -83,7 +85,7 @@ class InteractiveMapWidget:
             
         self.map_extent = (lon_min, lon_max, lat_min, lat_max)
         
-    def _create_widgets(self):
+    def _create_widgets(self) -> None:
         """Create all UI widgets."""
         # Output widget for plot display
         self.output = widgets.Output()
@@ -144,7 +146,7 @@ class InteractiveMapWidget:
             continuous_update=False
         )
         
-    def _setup_callbacks(self):
+    def _setup_callbacks(self) -> None:
         """Set up widget observers."""
         self.refvar_dropdown.observe(self._on_refvar_change, names='value')
         self.type_dropdown.observe(self._on_type_change, names='value')
@@ -153,7 +155,7 @@ class InteractiveMapWidget:
         self.center_slider.observe(self._on_center_change, names='value')
         self.colorbar_slider.observe(self._on_colorbar_change, names='value')
         
-    def parse_window(self, text):
+    def parse_window(self, text: str) -> timedelta:
         """Parse a human-readable window string to a timedelta."""
         text = text.strip().lower()
         if not text:
@@ -244,7 +246,7 @@ class InteractiveMapWidget:
             self.colorbar_slider.max = 1
             self.colorbar_slider.value = [0, 1]
             
-    def plot_map(self, center, window_td):
+    def plot_map(self, center: pd.Timestamp, window_td: timedelta) -> None:
         """Plot the reference map showing mean values of plot_var for each location (lat, lon)
         within the selected time window.
         """
@@ -352,7 +354,7 @@ class InteractiveMapWidget:
         """Callback for colorbar slider change event."""
         self.plot_map(self.center_slider.value, self._get_window_timedelta())
         
-    def clear(self):
+    def clear(self) -> None:
         """Clear the visualization output.
         
         This method clears the current visualization so users can call setup()
@@ -361,7 +363,7 @@ class InteractiveMapWidget:
         with self.output:
             clear_output(wait=True)
         
-    def setup(self):
+    def setup(self) -> None:
         """Initialize the widget with default selections and display."""
         # Initial setup
         self._update_refvar(self.refvar_dropdown.value)

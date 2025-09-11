@@ -7,7 +7,7 @@ from ..utils.config import read_config, validate_config_keys
 from ..workflows.workflow_model_obs import WorkflowModelObs
 
 
-def main():
+def main() -> None:
     """Main CLI entry point for perfect model observation processing."""
     
     parser = argparse.ArgumentParser(

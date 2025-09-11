@@ -1,17 +1,18 @@
 """Configuration utilities for CrocoCamp workflows."""
 
 import os
+from typing import Any, Dict, List
 import yaml
 
 
-def resolve_path(path, config_file):
+def resolve_path(path: str, config_file: str) -> str:
     """Resolve path to absolute, using config_file location as base for relative paths."""
     if os.path.isabs(path):
         return path
     config_dir = os.path.dirname(os.path.abspath(config_file))
     return os.path.abspath(os.path.join(config_dir, path))
 
-def read_config(config_file):
+def read_config(config_file: str) -> Dict[str, Any]:
     """Read configuration from YAML file."""
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"Config file '{config_file}' does not exist")
@@ -28,14 +29,14 @@ def read_config(config_file):
         raise ValueError(f"Error parsing YAML file: {e}")
 
 
-def validate_config_keys(config, required_keys):
+def validate_config_keys(config: Dict[str, Any], required_keys: List[str]) -> None:
     """Validate that all required keys are present in config."""
     missing_keys = [key for key in required_keys if key not in config]
     if missing_keys:
         raise KeyError(f"Required keys missing from config: {missing_keys}")
 
 
-def check_directory_not_empty(dir_path, name):
+def check_directory_not_empty(dir_path: str, name: str) -> None:
     """Check if directory exists and is not empty."""
     if not os.path.isdir(dir_path):
         raise NotADirectoryError(f"{name} '{dir_path}' does not exist or is not a directory")
@@ -44,7 +45,7 @@ def check_directory_not_empty(dir_path, name):
         raise ValueError(f"{name} '{dir_path}' is empty")
 
 
-def check_nc_files_only(dir_path, name):
+def check_nc_files_only(dir_path: str, name: str) -> None:
     """Check if directory contains only .nc files."""
     all_files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
 
@@ -61,7 +62,7 @@ def check_nc_files_only(dir_path, name):
         raise ValueError(f"{name} '{dir_path}' does not contain any .nc files")
 
 
-def check_nc_file(file_path, name):
+def check_nc_file(file_path: str, name: str) -> None:
     """Check if file exists and has .nc extension."""
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"{name} '{file_path}' does not exist")
@@ -70,7 +71,7 @@ def check_nc_file(file_path, name):
         raise ValueError(f"{name} '{file_path}' is not a .nc file")
 
 
-def check_or_create_folder(output_folder, name):
+def check_or_create_folder(output_folder: str, name: str) -> None:
     """Check if folder exists, if not, create it."""
     if os.path.exists(output_folder):
         if not os.path.isdir(output_folder):

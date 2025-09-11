@@ -3,9 +3,10 @@
 import os
 import re
 import tempfile
+from typing import Any, Union
 
 
-def read_namelist(file_path):
+def read_namelist(file_path: str) -> str:
     """Read namelist file and return as string."""
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"Namelist file '{file_path}' does not exist")
@@ -17,7 +18,7 @@ def read_namelist(file_path):
         raise IOError(f"Could not read namelist file '{file_path}': {e}")
 
 
-def write_namelist(file_path, content):
+def write_namelist(file_path: str, content: str) -> None:
     """Write content to namelist file."""
     try:
         with open(file_path, 'w') as f:
@@ -26,7 +27,7 @@ def write_namelist(file_path, content):
         raise IOError(f"Could not write namelist file '{file_path}': {e}")
 
 
-def symlink_to_namelist(input_nml):
+def symlink_to_namelist(input_nml: str) -> None:
     """Create a symbolic link to a namelist file."""
     if not os.path.isfile(input_nml):
         raise FileNotFoundError(f"Source namelist file '{input_nml}' does not exist")
@@ -45,7 +46,7 @@ def symlink_to_namelist(input_nml):
     except OSError as e:
         raise OSError(f"Could not create symlink from '{input_nml}' to '{dest}': {e}")
 
-def cleanup_namelist_symlink():
+def cleanup_namelist_symlink() -> None:
     """Remove the symbolic link to the namelist file."""
     dest = os.path.join(os.getcwd(), "input.nml")
     try:
@@ -59,7 +60,7 @@ def cleanup_namelist_symlink():
     except OSError as e:
         raise OSError(f"Could not remove symlink '{dest}': {e}")
 
-def update_namelist_param(content, section, param, value, string=True):
+def update_namelist_param(content: str, section: str, param: str, value: Union[str, int, float, bool], string: bool = True) -> str:
     """Update a parameter in a namelist section."""
     section_pattern = f'&{section}'
 

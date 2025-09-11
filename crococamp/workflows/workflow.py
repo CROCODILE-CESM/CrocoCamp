@@ -2,6 +2,7 @@
 
 import os
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Type
 
 from ..utils import config as config_utils
 
@@ -13,7 +14,7 @@ class Workflow(ABC):
     and workflow execution interface.
     """
     
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize workflow with configuration.
         
         Args:
@@ -23,7 +24,7 @@ class Workflow(ABC):
         self._validate_config()
     
     @classmethod
-    def from_config_file(cls, config_file, **kwargs):
+    def from_config_file(cls: Type['Workflow'], config_file: str, **kwargs: Any) -> 'Workflow':
         """Create workflow instance from configuration file.
         
         Args:
@@ -40,7 +41,7 @@ class Workflow(ABC):
         
         return cls(config)
     
-    def _validate_config(self):
+    def _validate_config(self) -> None:
         """Validate configuration parameters.
         
         Subclasses should override this method to provide specific validation.
@@ -50,7 +51,7 @@ class Workflow(ABC):
             config_utils.validate_config_keys(self.config, required_keys)
     
     @abstractmethod
-    def get_required_config_keys(self):
+    def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys.
         
         Returns:
@@ -59,7 +60,7 @@ class Workflow(ABC):
         pass
     
     @abstractmethod
-    def run(self):
+    def run(self) -> Any:
         """Execute the workflow.
         
         Returns:
@@ -67,7 +68,7 @@ class Workflow(ABC):
         """
         pass
     
-    def get_config(self, key, default=None):
+    def get_config(self, key: str, default: Optional[Any] = None) -> Any:
         """Get configuration value by key.
         
         Args:
@@ -79,7 +80,7 @@ class Workflow(ABC):
         """
         return self.config.get(key, default)
     
-    def set_config(self, key, value):
+    def set_config(self, key: str, value: Any) -> None:
         """Set configuration value.
         
         Args:
@@ -88,7 +89,7 @@ class Workflow(ABC):
         """
         self.config[key] = value
     
-    def print_config(self):
+    def print_config(self) -> None:
         """Print current configuration."""
         print("Configuration:")
         for key, value in self.config.items():

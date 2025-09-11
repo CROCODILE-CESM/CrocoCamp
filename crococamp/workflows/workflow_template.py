@@ -4,6 +4,8 @@ This template demonstrates the structure and required methods for
 creating new workflow subclasses that inherit from the base Workflow class.
 """
 
+from typing import Any, Dict, List
+
 from .workflow import Workflow
 
 
@@ -18,7 +20,7 @@ class WorkflowTemplate(Workflow):
     5. Follow namespace import pattern for utilities
     """
     
-    def get_required_config_keys(self):
+    def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys.
         
         Override this method to specify which configuration keys
@@ -34,7 +36,7 @@ class WorkflowTemplate(Workflow):
             'param2',            # Example: another parameter
         ]
     
-    def run(self, **kwargs):
+    def run(self, **kwargs: Any) -> str:
         """Execute the workflow.
         
         Override this method to implement your workflow logic.
@@ -60,7 +62,7 @@ class WorkflowTemplate(Workflow):
         print("Workflow completed successfully!")
         return result
     
-    def _validate_inputs(self, **kwargs):
+    def _validate_inputs(self, **kwargs: Any) -> None:
         """Validate workflow inputs and parameters.
         
         Add any workflow-specific validation logic here.
@@ -73,7 +75,7 @@ class WorkflowTemplate(Workflow):
         # Add more validation as needed
         pass
     
-    def _execute_workflow(self, **kwargs):
+    def _execute_workflow(self, **kwargs: Any) -> str:
         """Execute the main workflow logic.
         
         Implement your workflow steps here.
@@ -92,7 +94,7 @@ class WorkflowTemplate(Workflow):
         
         return output_path
     
-    def _load_data(self):
+    def _load_data(self) -> Dict[str, Any]:
         """Load input data.
         
         Implement data loading logic here.
@@ -104,7 +106,7 @@ class WorkflowTemplate(Workflow):
         print("Loading data...")
         return {}  # Placeholder
     
-    def _process_data(self, data, **kwargs):
+    def _process_data(self, data: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         """Process the loaded data.
         
         Implement data processing logic here.
@@ -112,7 +114,7 @@ class WorkflowTemplate(Workflow):
         print("Processing data...")
         return data  # Placeholder
     
-    def _save_results(self, processed_data):
+    def _save_results(self, processed_data: Dict[str, Any]) -> str:
         """Save processed results.
         
         Implement result saving logic here.

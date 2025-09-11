@@ -4,6 +4,7 @@ import glob
 import os
 import shutil
 import subprocess
+from typing import Any, List, Optional, Tuple
 
 import dask.dataframe as dd
 import numpy as np
@@ -27,7 +28,7 @@ class WorkflowModelObs(workflow.Workflow):
     and converting results to parquet format for analysis.
     """
     
-    def get_required_config_keys(self):
+    def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys."""
         return [
             'model_files_folder', 
@@ -40,8 +41,8 @@ class WorkflowModelObs(workflow.Workflow):
             'parquet_folder'
         ]
     
-    def run(self, trim_obs=False, no_matching=False, 
-            force_obs_time=False, parquet_only=False):
+    def run(self, trim_obs: bool = False, no_matching: bool = False, 
+            force_obs_time: bool = False, parquet_only: bool = False) -> int:
         """Execute the complete model-observation workflow.
         
         Args:
@@ -69,8 +70,8 @@ class WorkflowModelObs(workflow.Workflow):
         
         return files_processed
     
-    def process_files(self, trim_obs=False, no_matching=False, 
-                     force_obs_time=False):
+    def process_files(self, trim_obs: bool = False, no_matching: bool = False, 
+                     force_obs_time: bool = False) -> int:
         """Process model and observation files.
         
         Args:
@@ -140,7 +141,7 @@ class WorkflowModelObs(workflow.Workflow):
         
         return len(model_in_files)
     
-    def merge_model_obs_to_parquet(self, trim_obs):
+    def merge_model_obs_to_parquet(self, trim_obs: bool) -> None:
         """Merge model and observation files to parquet format."""
         output_folder = self.config['output_folder']
         parquet_folder = self.config['parquet_folder']
@@ -178,7 +179,7 @@ class WorkflowModelObs(workflow.Workflow):
 
         shutil.rmtree(tmp_parquet_folder)
     
-    def _print_workflow_config(self, trim_obs):
+    def _print_workflow_config(self, trim_obs: bool) -> None:
         """Print workflow configuration."""
         print("Configuration:")
         print(f"  perfect_model_obs_dir: {self.config['perfect_model_obs_dir']}")
@@ -194,7 +195,7 @@ class WorkflowModelObs(workflow.Workflow):
         if trim_obs:
             print(f"  trimmed_obs_folder: {self.config.get('trimmed_obs_folder', 'trimmed_obs_seq')}")
     
-    def _validate_workflow_paths(self, trim_obs):
+    def _validate_workflow_paths(self, trim_obs: bool) -> None:
         """Validate workflow paths and create necessary directories."""
         # Validate input directories
         print("Validating model_files_folder...")
@@ -225,7 +226,7 @@ class WorkflowModelObs(workflow.Workflow):
         config_utils.check_nc_file(self.config['static_file'], "static_file")
         config_utils.check_nc_file(self.config['ocean_geometry'], "ocean_geometry")
     
-    def _update_model_namelist(self, namelist_content):
+    def _update_model_namelist(self, namelist_content: str) -> str:
         """Update model namelist parameters."""
         namelist_content = namelist.update_namelist_param(
             namelist_content, "model_nml", "template_file", self.config['template_file']
@@ -238,10 +239,10 @@ class WorkflowModelObs(workflow.Workflow):
         )
         return namelist_content
     
-    def _process_with_time_matching(self, model_in_files, obs_in_files,
-                                  trim_obs, hull_polygon, 
-                                  hull_points, namelist_content, 
-                                  force_obs_time):
+    def _process_with_time_matching(self, model_in_files: List[str], obs_in_files: List[str],
+                                  trim_obs: bool, hull_polygon: Optional[Any], 
+                                  hull_points: Optional[np.ndarray], namelist_content: str, 
+                                  force_obs_time: bool) -> int:
         """Process files with time-matching logic."""
         counter = 0
         used_obs_in_files = []
@@ -297,10 +298,10 @@ class WorkflowModelObs(workflow.Workflow):
         
         return counter
     
-    def _process_model_obs_pair(self, model_in_file, obs_in_file, 
-                               trim_obs, counter, hull_polygon,
-                               hull_points, namelist_content, 
-                               force_obs_time):
+    def _process_model_obs_pair(self, model_in_file: str, obs_in_file: str, 
+                               trim_obs: bool, counter: int, hull_polygon: Optional[Any],
+                               hull_points: Optional[np.ndarray], namelist_content: str, 
+                               force_obs_time: bool) -> None:
         """Process a single model-observation file pair."""
         input_nml = os.path.join(self.config['perfect_model_obs_dir'], "input.nml")
         model_in_filename = os.path.basename(model_in_file)
@@ -402,8 +403,8 @@ class WorkflowModelObs(workflow.Workflow):
         print(f"Perfect model output saved to: {perfect_output_path}")
         print(f"obs_seq.out output saved to: {obs_output_path}")
     
-    def _merge_pair_to_parquet(self, perf_obs_file, orig_obs_file, 
-                              parquet_path):
+    def _merge_pair_to_parquet(self, perf_obs_file: str, orig_obs_file: str, 
+                              parquet_path: str) -> None:
         """Merge a pair of observation files into parquet format."""
         # Read obs_sequence files
         perf_obs_out = obsq.ObsSequence(perf_obs_file)
@@ -429,7 +430,7 @@ class WorkflowModelObs(workflow.Workflow):
             })
 
         # Generate unique hash for merging
-        def compute_hash(df, cols, hash_col="hash"):
+        def compute_hash(df: pd.DataFrame, cols: List[str], hash_col: str = "hash") -> pd.DataFrame:
             concat = df[cols].astype(str).agg('-'.join, axis=1)
             df[hash_col] = pd.util.hash_pandas_object(concat, index=False).astype('int64')
             return df

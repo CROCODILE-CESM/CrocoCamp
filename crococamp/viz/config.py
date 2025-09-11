@@ -1,5 +1,7 @@
 """Configuration classes for visualization defaults."""
 
+from typing import List, Optional, Tuple
+
 
 class MapConfig:
     """Configuration for interactive map visualization.
@@ -8,10 +10,10 @@ class MapConfig:
     All parameters can be overridden during initialization.
     """
     
-    def __init__(self, colormap='cividis',
-                 map_extent=None, padding=5.0, figure_size=(10, 12),
-                 scatter_size=100, scatter_alpha=0.7, default_window_hours=None,
-                 disallowed_plotvars=None):
+    def __init__(self, colormap: str = 'cividis',
+                 map_extent: Optional[Tuple[float, float, float, float]] = None, padding: float = 5.0, figure_size: Tuple[int, int] = (10, 12),
+                 scatter_size: int = 100, scatter_alpha: float = 0.7, default_window_hours: Optional[int] = None,
+                 disallowed_plotvars: Optional[List[str]] = None) -> None:
         """Initialize map configuration.
         
         Args:
