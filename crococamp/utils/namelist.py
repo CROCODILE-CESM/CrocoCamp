@@ -3,7 +3,8 @@
 import os
 import re
 import shutil
-from typing import Union, List
+import tempfile
+from typing import Any, Dict, List, Union
 
 class Namelist():
     """Class to handle file operations related to perfect_model_obs input.nml
@@ -11,6 +12,9 @@ class Namelist():
 
     It includes methods to read, write, and update parameters, as well as
     generating necessary symlink for perfect_model_obs to execute correctly.
+    
+    The update_namelist_param method supports both single-value parameters and
+    multi-line block parameters (from dict or list inputs).
     """
 
     def __init__(self, namelist_path: str) -> None:
@@ -36,10 +40,10 @@ class Namelist():
             raise FileNotFoundError(f"Namelist file '{self.namelist_path}' does not exist")
 
         try:
-            with open(self.namelist_path, 'r', encoding='utf-8') as f:
+            with open(self.namelist_path, 'r') as f:
                 return f.read()
         except IOError as e:
-            raise IOError(f"Could not read namelist file '{self.namelist_path}': {e}") from e
+            raise IOError(f"Could not read namelist file '{self.namelist_path}': {e}")
 
     def write_namelist(self, namelist_path : str = None, content : str = None) -> None:
         """Write content to namelist file."""
@@ -49,10 +53,10 @@ class Namelist():
             content = self.content
 
         try:
-            with open(namelist_path, 'w', encoding='utf-8') as f:
+            with open(namelist_path, 'w') as f:
                 f.write(content)
         except IOError as e:
-            raise IOError(f"Could not write namelist file '{namelist_path}': {e}") from e
+            raise IOError(f"Could not write namelist file '{namelist_path}': {e}")
 
     def symlink_to_namelist(self) -> None:
         """Create a symbolic link to a namelist file."""
@@ -72,7 +76,7 @@ class Namelist():
             print(f"Symlink {self.dest} -> '{self.namelist_path}' created.")
         except OSError as e:
             raise OSError(f"Could not create symlink from "
-                         f"'{self.namelist_path}' to '{self.dest}': {e}") from e
+                         f"'{self.namelist_path}' to '{self.dest}': {e}")
 
     def cleanup_namelist_symlink(self) -> None:
         """Remove the symbolic link to the namelist file."""
@@ -85,25 +89,107 @@ class Namelist():
             else:
                 print(f"No symlink '{self.dest}' found to remove.")
         except OSError as e:
-            raise OSError(f"Could not remove symlink '{self.dest}': {e}") from e
+            raise OSError(f"Could not remove symlink '{self.dest}': {e}")
 
-    def update_namelist_param(self, section: str, param: str, value: Union[str, int, float, bool], string: bool = True) -> None:
+    def _format_namelist_block_param(self, param: str, value: Union[Dict, List], dict_format: str = 'triplet') -> List[str]:
+        """Format a dict or list value as multi-line namelist block.
+        
+        Arguments:
+        param: Parameter name
+        value: Dictionary or list to format as multi-line block
+        dict_format: Format for dict values - 'triplet' adds 'UPDATE' as third element,
+                    'pair' uses just key-value pairs
+        
+        Returns:
+        List of formatted lines for the block
+        """
+        lines = []
+        
+        if isinstance(value, dict):
+            items = list(value.items())
+            if items:
+                # First line with parameter name  
+                key, val = items[0]
+                if dict_format == 'triplet':
+                    # Format as triplets: 'key', 'value', 'UPDATE'
+                    padded_val = f"{val}".ljust(25)  # Match the padding from original
+                    first_line = f"   {param.ljust(27)}= '{key} ', '{padded_val}', 'UPDATE',"
+                else:
+                    # Format as key-value pairs: 'key', 'value'
+                    first_line = f"   {param.ljust(27)}= '{key}', '{val}',"
+                lines.append(first_line)
+                
+                # Subsequent lines aligned with the first quote after '='
+                # The alignment should be: 3 spaces + param width + "= " + alignment to first quote
+                indent = " " * (3 + 27 + 2)  # 3 + param_width + len("= ")
+                for key, val in items[1:]:
+                    if dict_format == 'triplet':
+                        padded_val = f"{val}".ljust(25)
+                        line = f"{indent}'{key} ', '{padded_val}', 'UPDATE',"
+                    else:
+                        line = f"{indent}'{key}', '{val}',"
+                    lines.append(line)
+                    
+        elif isinstance(value, list):
+            # Format as simple list of values
+            if value:
+                # First line with parameter name
+                first_val = value[0]
+                first_line = f"   {param.ljust(27)}= '{first_val}'"
+                lines.append(first_line)
+                
+                # Subsequent lines aligned with the first quote
+                indent = " " * (3 + 27 + 2)  # Same alignment as dict case
+                for val in value[1:]:
+                    line = f"{indent}'{val}'"
+                    lines.append(line)
+                    
+        return lines
+
+    def update_namelist_param(self, section: str, param: str, value: Union[str, int, float, bool, Dict, List], string: bool = True, dict_format: str = 'triplet') -> None:
         """Update a parameter in a namelist section.
 
+        Supports both single-value parameters and multi-line block parameters.
+        
         Arguments:
         section: Namelist section (without initial '&')
         param: Parameter name to update
-        value: New value for the parameter
-        string: Whether the value is a string (True) or a number (False)
-                (default: True)
+        value: New value for the parameter. Can be:
+            - Scalar (str, int, float, bool) for single-line parameters
+            - Dict for multi-line blocks formatted as triplets (key, value, 'UPDATE') or pairs
+            - List for multi-line blocks formatted as simple values
+        string: Whether scalar values should be quoted (True) or not (False)
+                (default: True). Ignored for dict/list values.
+        dict_format: Format for dict values - 'triplet' (default) adds 'UPDATE' as third element,
+                    'pair' uses just key-value pairs
+        
+        Examples:
+        # Single-line parameter
+        update_namelist_param('model_nml', 'assimilation_period_days', 5, string=False)
+        
+        # Multi-line block from dict (formatted as triplets) - for model_state_variables
+        update_namelist_param('model_nml', 'model_state_variables', 
+                             {'so': 'QTY_SALINITY', 'thetao': 'QTY_POTENTIAL_TEMPERATURE'})
+        
+        # Multi-line block from dict (formatted as pairs) - for other dict parameters
+        update_namelist_param('some_nml', 'some_param', 
+                             {'key1': 'val1', 'key2': 'val2'}, dict_format='pair')
+        
+        # Multi-line block from list
+        update_namelist_param('obs_kind_nml', 'assimilate_these_obs_types',
+                             ['FLOAT_SALINITY', 'FLOAT_TEMPERATURE'])
         """
 
+        # Detect if this is a multi-line block parameter
+        is_block_param = isinstance(value, (dict, list))
+        
         section_pattern = f'&{section}'
-
         lines = self.content.split('\n')
         in_section = False
         updated = False
+        section_end_idx = None
 
+        # Find the section and handle parameter update/insertion
         for j, line in enumerate(lines):
             if line.strip().startswith(section_pattern):
                 in_section = True
@@ -112,21 +198,96 @@ class Namelist():
             if in_section and line.strip().startswith('&') and not line.strip().startswith(section_pattern):
                 in_section = False
                 continue
+                
+            if in_section and line.strip() == '/':
+                section_end_idx = j
+                break
 
             if in_section:
                 param_pattern = rf'^\s*{re.escape(param)}\s*='
                 if re.match(param_pattern, line):
-                    if string:
-                        lines[j] = f'   {param.ljust(27)}= "{value}",'
+                    if is_block_param:
+                        # Handle multi-line block replacement
+                        updated = self._replace_block_parameter(lines, j, param, value, dict_format)
                     else:
-                        lines[j] = f'   {param.ljust(27)}= {value},'
-                    updated = True
+                        # Handle single-line parameter replacement
+                        if string:
+                            lines[j] = f'   {param.ljust(27)}= "{value}",'
+                        else:
+                            lines[j] = f'   {param.ljust(27)}= {value},'
+                        updated = True
                     break
 
+        # If parameter not found, insert it
         if not updated:
-            raise ValueError(f"Parameter '{param}' not found in section '&{section}'")
+            if section_end_idx is not None:
+                if is_block_param:
+                    # Insert multi-line block before section terminator (/)
+                    new_lines = self._format_namelist_block_param(param, value, dict_format)
+                    lines[section_end_idx:section_end_idx] = new_lines
+                else:
+                    # Insert single-line parameter
+                    if string:
+                        new_line = f'   {param.ljust(27)}= "{value}",'
+                    else:
+                        new_line = f'   {param.ljust(27)}= {value},'
+                    lines.insert(section_end_idx, new_line)
+                updated = True
+            else:
+                raise ValueError(f"Section '&{section}' not found or malformed")
+        
+        if not updated:
+            raise ValueError(f"Parameter '{param}' not found in section '&{section}' and could not be inserted")
 
         self.content = '\n'.join(lines)
+
+    def _replace_block_parameter(self, lines: List[str], start_idx: int, param: str, value: Union[Dict, List], dict_format: str = 'triplet') -> bool:
+        """Replace an existing multi-line block parameter.
+        
+        Correctly handles blocks of different sizes - the new block can have more,
+        fewer, or the same number of lines as the old block.
+        
+        Arguments:
+        lines: List of lines from the namelist content
+        start_idx: Index of the line where the parameter starts
+        param: Parameter name
+        value: New value for the parameter
+        dict_format: Format for dict values ('triplet' or 'pair')
+        
+        Returns:
+        True if replacement was successful
+        """
+        # Find the end of the current block
+        end_idx = start_idx
+        param_pattern = rf'^\s*{re.escape(param)}\s*='
+        
+        # Find all continuation lines for this parameter
+        for i in range(start_idx + 1, len(lines)):
+            line = lines[i].strip()
+            # Stop if we hit another parameter, section end, or new section
+            if (line.startswith('/') or 
+                line.startswith('&') or 
+                (line and not line.startswith(('\'', '"')) and '=' in line and not re.match(param_pattern, lines[i]))):
+                break
+            # If this looks like a continuation line (indented, starts with quote, or is empty)
+            if (lines[i].startswith((' ', '\t')) or 
+                line.startswith(('\'', '"')) or 
+                not line):
+                end_idx = i
+            else:
+                break
+                
+        # Generate new block lines
+        new_lines = self._format_namelist_block_param(param, value, dict_format)
+        
+        # Replace the old block with the new one (intentionally replaces existing lines)
+        # Python slice assignment automatically handles blocks of different sizes:
+        # - If new block is shorter: removes extra old lines
+        # - If new block is longer: extends the list with additional lines
+        # - If same size: replaces line-by-line
+        lines[start_idx:end_idx + 1] = new_lines
+        
+        return True
 
     def update_obs_kind_nml(self, obs_types_list: List[str]) -> None:
         """Update assimilate_these_obs_types parameter in obs_kind_nml section.
@@ -143,111 +304,5 @@ class Namelist():
         if not obs_types_list:
             raise ValueError("obs_types_list cannot be empty")
 
-        section_name = 'obs_kind_nml'
-        param_name = 'assimilate_these_obs_types'
-
-        lines = self.content.split('\n')
-        param_start_line, param_end_line = self._find_parameter_location(
-            lines, section_name, param_name)
-
-        indent = '   '  # Standard indentation
-        new_lines = self._format_obs_types_parameter(param_name, obs_types_list, indent)
-
-        if param_start_line is None:
-            # Parameter doesn't exist, need to add it before the section end
-            section_end = self._find_section_end(lines, section_name)
-            if section_end is None:
-                raise ValueError(f"Could not find end of section '&{section_name}'")
-            lines[section_end:section_end] = new_lines
-        else:
-            # Parameter exists, replace it
-            lines[param_start_line:param_end_line + 1] = new_lines
-
-        self.content = '\n'.join(lines)
-
-    def _find_parameter_location(self, lines: List[str], section_name: str,
-                               param_name: str) -> tuple:
-        """Find the start and end line numbers of a parameter in a section."""
-        in_section = False
-        param_start_line = None
-        param_end_line = None
-
-        for i, line in enumerate(lines):
-            stripped = line.strip()
-
-            if stripped.startswith(f'&{section_name}'):
-                in_section = True
-                continue
-
-            if in_section and stripped.startswith('&') and not stripped.startswith(f'&{section_name}'):
-                in_section = False
-                continue
-
-            if in_section and stripped == '/':
-                in_section = False
-                continue
-
-            if in_section and re.match(rf'^\s*{re.escape(param_name)}\s*=', line):
-                param_start_line = i
-                # Find the end of this parameter
-                for j in range(i + 1, len(lines)):
-                    next_line = lines[j].strip()
-                    # If we hit another parameter, section end, or empty line followed by parameter
-                    if (re.match(r'^\s*\w+\s*=', lines[j]) or
-                        next_line == '/' or
-                        next_line.startswith('&')):
-                        param_end_line = j - 1
-                        break
-
-                # If we didn't find an end, it goes to end of section
-                if param_end_line is None:
-                    for j in range(i + 1, len(lines)):
-                        if lines[j].strip() == '/' or lines[j].strip().startswith('&'):
-                            param_end_line = j - 1
-                            break
-                    if param_end_line is None:
-                        param_end_line = len(lines) - 1
-                break
-
-        return param_start_line, param_end_line
-
-    def _find_section_end(self, lines: List[str], section_name: str) -> int:
-        """Find the end line number of a section."""
-        in_section = False
-        for i, line in enumerate(lines):
-            stripped = line.strip()
-            if stripped.startswith(f'&{section_name}'):
-                in_section = True
-                continue
-            if in_section and stripped == '/':
-                return i
-        return None
-
-    def _format_obs_types_parameter(self, param_name: str, obs_types_list: List[str],
-                                   indent: str) -> List[str]:
-        """Format the obs_types parameter with proper Fortran namelist continuation syntax.
-
-        Args:
-            param_name: Name of the parameter
-            obs_types_list: List of observation types
-            indent: Base indentation string
-
-        Returns:
-            List of formatted lines
-        """
-        lines = []
-
-        if not obs_types_list:
-            lines.append(f"{indent}{param_name.ljust(27)}= ''")
-            return lines
-
-        # First line with parameter name and first value
-        first_line = f"{indent}{param_name.ljust(27)}= '{obs_types_list[0]}'"
-        lines.append(first_line)
-
-        # Continuation lines for remaining values - align with the opening quote
-        continuation_indent = ' ' * (len(indent) + 27 + 3)  # align after '= ' at position 27+3
-        for obs_type in obs_types_list[1:]:
-            lines.append(f"{continuation_indent}'{obs_type}'")
-
-        return lines
+        # Use the enhanced update_namelist_param method with List support
+        self.update_namelist_param('obs_kind_nml', 'assimilate_these_obs_types', obs_types_list)
