@@ -143,6 +143,95 @@ required_keys = workflow.get_required_config_keys()
 workflow.run()
 ```
 
+## Observation Types Configuration
+
+CrocoCamp now supports automatic configuration of observation types for DART assimilation through the `use_these_obs` field in your configuration file. This feature reads observation type definitions from DART's `obs_def_ocean_mod.rst` file and automatically updates the `input.nml` file's `&obs_kind_nml` section.
+
+### Basic Usage
+
+Add the `use_these_obs` field to your `config.yaml`:
+
+```yaml
+# Basic observation types
+use_these_obs:
+  - FLOAT_TEMPERATURE
+  - FLOAT_SALINITY
+  - CTD_TEMPERATURE
+  - CTD_SALINITY
+```
+
+### ALL_<FIELD> Syntax
+
+You can use the `ALL_<FIELD>` syntax to automatically include all observation types for a specific quantity:
+
+```yaml
+use_these_obs:
+  - ALL_TEMPERATURE    # Includes all temperature-related obs types
+  - ALL_SALINITY       # Includes all salinity-related obs types  
+  - SATELLITE_SSH      # Include specific additional types
+```
+
+### Supported Field Types
+
+The `ALL_<FIELD>` syntax supports any quantity type defined in DART's obs_def_ocean_mod.rst:
+- `ALL_TEMPERATURE` - All temperature observation types (FLOAT_TEMPERATURE, CTD_TEMPERATURE, XBT_TEMPERATURE, etc.)
+- `ALL_SALINITY` - All salinity observation types (FLOAT_SALINITY, CTD_SALINITY, etc.)
+- `ALL_U_CURRENT_COMPONENT` - All U-velocity observation types
+- `ALL_V_CURRENT_COMPONENT` - All V-velocity observation types
+- `ALL_SEA_SURFACE_HEIGHT` - All sea surface height observation types
+- And many more...
+
+### Example Configuration
+
+```yaml
+perfect_model_obs_dir: /path/to/DART/models/MOM6/work
+model_files_folder: /path/to/model/files
+obs_seq_in_folder: /path/to/obs_seq_files
+output_folder: /path/to/output
+
+# Observation types configuration
+use_these_obs:
+  - ALL_TEMPERATURE      # Expands to ~15 temperature obs types
+  - FLOAT_SALINITY       # Specific salinity type
+  - SATELLITE_SSH        # Sea surface height from satellites
+
+# Other configuration...
+time_window:
+  days: 5
+  hours: 0
+```
+
+### How It Works
+
+1. **Parsing**: CrocoCamp reads the DART observation definitions from:
+   `{perfect_model_obs_dir}/../../../observations/forward_operators/obs_def_ocean_mod.rst`
+
+2. **Validation**: Each observation type in your `use_these_obs` list is validated against the available types
+
+3. **Expansion**: `ALL_<FIELD>` entries are expanded to include all observation types with matching quantity (`QTY_<FIELD>`)
+
+4. **Namelist Update**: The `input.nml` file's `&obs_kind_nml` section is automatically updated with proper Fortran formatting:
+
+```fortran
+&obs_kind_nml
+   assimilate_these_obs_types = 'ARGO_TEMPERATURE'
+                                'BOTTLE_TEMPERATURE'
+                                'CTD_TEMPERATURE'
+                                'FLOAT_SALINITY'
+                                'SATELLITE_SSH'
+   evaluate_these_obs_types   = ''
+   /
+```
+
+### Error Handling
+
+If an observation type is invalid or a field expansion fails, CrocoCamp will show a warning and continue with the existing `input.nml` configuration:
+
+```
+Warning: Could not process observation types: Invalid observation type 'INVALID_TYPE'
+Continuing with existing obs_kind_nml configuration
+```
+
 
 
 ## Demo
