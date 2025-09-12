@@ -288,5 +288,3 @@ class Namelist():
         lines[start_idx:end_idx + 1] = new_lines
         
         return True
-
-
