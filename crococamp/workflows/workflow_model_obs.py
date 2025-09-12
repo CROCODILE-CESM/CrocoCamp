@@ -268,7 +268,9 @@ class WorkflowModelObs(workflow.Workflow):
                     self.config['use_these_obs'], rst_file_path
                 )
                 print(f"Expanded observation types: {expanded_obs_types}")
-                self._namelist.update_obs_kind_nml(expanded_obs_types)
+                if not expanded_obs_types:
+                    raise ValueError("Expanded observation types list cannot be empty")
+                self._namelist.update_namelist_param('obs_kind_nml', 'assimilate_these_obs_types', expanded_obs_types)
                 print("Updated obs_kind_nml section with observation types")
             except (FileNotFoundError, ValueError) as e:
                 print(f"Warning: Could not process observation types: {e}")

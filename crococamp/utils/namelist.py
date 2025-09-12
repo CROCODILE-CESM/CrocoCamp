@@ -289,20 +289,4 @@ class Namelist():
         
         return True
 
-    def update_obs_kind_nml(self, obs_types_list: List[str]) -> None:
-        """Update assimilate_these_obs_types parameter in obs_kind_nml section.
 
-        Args:
-            obs_types_list: List of observation types to assimilate
-
-        The formatting follows the pattern:
-        assimilate_these_obs_types = 'FIRST_TYPE'
-                                     'SECOND_TYPE'
-                                     'THIRD_TYPE'
-        All entries are left-aligned starting after the '=' sign.
-        """
-        if not obs_types_list:
-            raise ValueError("obs_types_list cannot be empty")
-
-        # Use the enhanced update_namelist_param method with List support
-        self.update_namelist_param('obs_kind_nml', 'assimilate_these_obs_types', obs_types_list)
