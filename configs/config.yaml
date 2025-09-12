@@ -2,21 +2,21 @@
 # CrocoCamp Configuration Example
 # ==========================================
 
-# Required: Path to DART's perfect model obs executable
+# Path to DART's perfect model obs executable
 perfect_model_obs_dir: /path/to/DART/models/MOM6/work
 
-# Required: Input directory containing model .nc files to process  
+# Input directory containing model .nc files to process  
 model_files_folder: /path/to/model/files/
 
-# Required: Model configuration files (must be .nc files)
+# Model configuration files (must be .nc files)
 template_file: /path/to/model/files/template.nc
 static_file: /path/to/model/files/mom6.h.static.nc
 ocean_geometry: /path/to/model/files/mom6.h.ocean_geometry.nc
 
-# Required: Directory containing observation files (obs_seq.in format)
+# Directory containing observation files (obs_seq.in format)
 obs_seq_in_folder: /path/to/obs_seq_files/
 
-# Required: Output directories (will be created if they don't exist)
+# Output directories (will be created if they don't exist)
 output_folder: /path/to/output/
 input_nml_bck: /path/to/backups/
 trimmed_obs_folder: /path/to/trimmed_obs/
