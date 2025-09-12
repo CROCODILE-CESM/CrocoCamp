@@ -243,6 +243,9 @@ class Namelist():
     def _replace_block_parameter(self, lines: List[str], start_idx: int, param: str, value: Union[Dict, List], dict_format: str = 'triplet') -> bool:
         """Replace an existing multi-line block parameter.
         
+        Correctly handles blocks of different sizes - the new block can have more,
+        fewer, or the same number of lines as the old block.
+        
         Arguments:
         lines: List of lines from the namelist content
         start_idx: Index of the line where the parameter starts
@@ -277,6 +280,10 @@ class Namelist():
         new_lines = self._format_namelist_block_param(param, value, dict_format)
         
         # Replace the old block with the new one (intentionally replaces existing lines)
+        # Python slice assignment automatically handles blocks of different sizes:
+        # - If new block is shorter: removes extra old lines
+        # - If new block is longer: extends the list with additional lines
+        # - If same size: replaces line-by-line
         lines[start_idx:end_idx + 1] = new_lines
         
         return True
