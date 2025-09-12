@@ -90,12 +90,14 @@ class Namelist():
         except OSError as e:
             raise OSError(f"Could not remove symlink '{self.dest}': {e}")
 
-    def _format_namelist_block_param(self, param: str, value: Union[Dict, List]) -> List[str]:
+    def _format_namelist_block_param(self, param: str, value: Union[Dict, List], dict_format: str = 'triplet') -> List[str]:
         """Format a dict or list value as multi-line namelist block.
         
         Arguments:
         param: Parameter name
         value: Dictionary or list to format as multi-line block
+        dict_format: Format for dict values - 'triplet' adds 'UPDATE' as third element,
+                    'pair' uses just key-value pairs
         
         Returns:
         List of formatted lines for the block
@@ -103,22 +105,28 @@ class Namelist():
         lines = []
         
         if isinstance(value, dict):
-            # Format as triplets: 'key', 'value', 'UPDATE'
             items = list(value.items())
             if items:
                 # First line with parameter name  
                 key, val = items[0]
-                # Pad the value to match the original format
-                padded_val = f"{val}".ljust(25)  # Match the padding from original
-                first_line = f"   {param.ljust(27)}= '{key} ', '{padded_val}', 'UPDATE',"
+                if dict_format == 'triplet':
+                    # Format as triplets: 'key', 'value', 'UPDATE'
+                    padded_val = f"{val}".ljust(25)  # Match the padding from original
+                    first_line = f"   {param.ljust(27)}= '{key} ', '{padded_val}', 'UPDATE',"
+                else:
+                    # Format as key-value pairs: 'key', 'value'
+                    first_line = f"   {param.ljust(27)}= '{key}', '{val}',"
                 lines.append(first_line)
                 
                 # Subsequent lines aligned with the first quote after '='
                 # The alignment should be: 3 spaces + param width + "= " + alignment to first quote
                 indent = " " * (3 + 27 + 2)  # 3 + param_width + len("= ")
                 for key, val in items[1:]:
-                    padded_val = f"{val}".ljust(25)
-                    line = f"{indent}'{key} ', '{padded_val}', 'UPDATE',"
+                    if dict_format == 'triplet':
+                        padded_val = f"{val}".ljust(25)
+                        line = f"{indent}'{key} ', '{padded_val}', 'UPDATE',"
+                    else:
+                        line = f"{indent}'{key}', '{val}',"
                     lines.append(line)
                     
         elif isinstance(value, list):
@@ -137,7 +145,7 @@ class Namelist():
                     
         return lines
 
-    def update_namelist_param(self, section: str, param: str, value: Union[str, int, float, bool, Dict, List], string: bool = True) -> None:
+    def update_namelist_param(self, section: str, param: str, value: Union[str, int, float, bool, Dict, List], string: bool = True, dict_format: str = 'triplet') -> None:
         """Update a parameter in a namelist section.
 
         Supports both single-value parameters and multi-line block parameters.
@@ -147,18 +155,24 @@ class Namelist():
         param: Parameter name to update
         value: New value for the parameter. Can be:
             - Scalar (str, int, float, bool) for single-line parameters
-            - Dict for multi-line blocks formatted as triplets (key, value, 'UPDATE')
+            - Dict for multi-line blocks formatted as triplets (key, value, 'UPDATE') or pairs
             - List for multi-line blocks formatted as simple values
         string: Whether scalar values should be quoted (True) or not (False)
                 (default: True). Ignored for dict/list values.
+        dict_format: Format for dict values - 'triplet' (default) adds 'UPDATE' as third element,
+                    'pair' uses just key-value pairs
         
         Examples:
         # Single-line parameter
         update_namelist_param('model_nml', 'assimilation_period_days', 5, string=False)
         
-        # Multi-line block from dict (formatted as triplets)
+        # Multi-line block from dict (formatted as triplets) - for model_state_variables
         update_namelist_param('model_nml', 'model_state_variables', 
                              {'so': 'QTY_SALINITY', 'thetao': 'QTY_POTENTIAL_TEMPERATURE'})
+        
+        # Multi-line block from dict (formatted as pairs) - for other dict parameters
+        update_namelist_param('some_nml', 'some_param', 
+                             {'key1': 'val1', 'key2': 'val2'}, dict_format='pair')
         
         # Multi-line block from list
         update_namelist_param('obs_kind_nml', 'assimilate_these_obs_types',
@@ -193,7 +207,7 @@ class Namelist():
                 if re.match(param_pattern, line):
                     if is_block_param:
                         # Handle multi-line block replacement
-                        updated = self._replace_block_parameter(lines, j, param, value)
+                        updated = self._replace_block_parameter(lines, j, param, value, dict_format)
                     else:
                         # Handle single-line parameter replacement
                         if string:
@@ -207,8 +221,8 @@ class Namelist():
         if not updated:
             if section_end_idx is not None:
                 if is_block_param:
-                    # Insert multi-line block
-                    new_lines = self._format_namelist_block_param(param, value)
+                    # Insert multi-line block before section terminator (/)
+                    new_lines = self._format_namelist_block_param(param, value, dict_format)
                     lines[section_end_idx:section_end_idx] = new_lines
                 else:
                     # Insert single-line parameter
@@ -226,7 +240,7 @@ class Namelist():
 
         self.content = '\n'.join(lines)
 
-    def _replace_block_parameter(self, lines: List[str], start_idx: int, param: str, value: Union[Dict, List]) -> bool:
+    def _replace_block_parameter(self, lines: List[str], start_idx: int, param: str, value: Union[Dict, List], dict_format: str = 'triplet') -> bool:
         """Replace an existing multi-line block parameter.
         
         Arguments:
@@ -234,6 +248,7 @@ class Namelist():
         start_idx: Index of the line where the parameter starts
         param: Parameter name
         value: New value for the parameter
+        dict_format: Format for dict values ('triplet' or 'pair')
         
         Returns:
         True if replacement was successful
@@ -259,9 +274,9 @@ class Namelist():
                 break
                 
         # Generate new block lines
-        new_lines = self._format_namelist_block_param(param, value)
+        new_lines = self._format_namelist_block_param(param, value, dict_format)
         
-        # Replace the old block with the new one
+        # Replace the old block with the new one (intentionally replaces existing lines)
         lines[start_idx:end_idx + 1] = new_lines
         
         return True
