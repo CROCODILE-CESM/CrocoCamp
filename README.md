@@ -31,7 +31,7 @@ The toolkit is organized into logical modules:
 ### Prerequisites and Dependencies
 
 #### 1. Install DART for MOM6
-DART (Data Assimilation Research Testbed) is required to run the `perfect_model_obs` executable, which interpolates MOM6 ocean model output onto the observation space provided in obs_seq.in format. The following instructions are for Linux machines.
+DART (Data Assimilation Research Testbed) is needed to run the `perfect_model_obs` executable, which interpolates MOM6 ocean model output onto the observation space provided in obs_seq.in format. The following instructions are for Linux machines.
 
 ```bash
 git clone git@github.com:CROCODILE-CESM/DART.git
@@ -136,9 +136,6 @@ workflow.set_config("parquet_folder", "/custom/parquet/path")
 # Access configuration values
 output_folder = workflow.get_config("output_folder") 
 workflow.print_config()  # Print all current configuration
-
-# Get required configuration keys for validation
-required_keys = workflow.get_required_config_keys()
 
 workflow.run()
 ```
