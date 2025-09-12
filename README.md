@@ -179,7 +179,7 @@ The `ALL_<FIELD>` syntax supports any quantity type defined in DART's obs_def_oc
 - `ALL_U_CURRENT_COMPONENT` - All U-velocity observation types
 - `ALL_V_CURRENT_COMPONENT` - All V-velocity observation types
 - `ALL_SEA_SURFACE_HEIGHT` - All sea surface height observation types
-- And many more...
+- See DART documentation for a complete list
 
 ### Example Configuration
 
