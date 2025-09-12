@@ -75,7 +75,8 @@ class Namelist():
             os.symlink(self.namelist_path, self.dest)
             print(f"Symlink {self.dest} -> '{self.namelist_path}' created.")
         except OSError as e:
-            raise OSError(f"Could not create symlink from '{self.namelist_path}' to '{self.dest}': {e}")
+            raise OSError(f"Could not create symlink from "
+                         f"'{self.namelist_path}' to '{self.dest}': {e}")
 
     def cleanup_namelist_symlink(self) -> None:
         """Remove the symbolic link to the namelist file."""

@@ -2,7 +2,8 @@
 
 from datetime import timedelta
 import os
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Tuple
 import yaml
 
 
@@ -20,7 +21,7 @@ def read_config(config_file: str) -> Dict[str, Any]:
         raise FileNotFoundError(f"Config file '{config_file}' does not exist")
 
     try:
-        with open(config_file, 'r') as f:
+        with open(config_file, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
         for key in config:
             if isinstance(config[key], str):
@@ -30,7 +31,7 @@ def read_config(config_file: str) -> Dict[str, Any]:
         config = convert_time_window(config)
         return config
     except yaml.YAMLError as e:
-        raise ValueError(f"Error parsing YAML file: {e}")
+        raise ValueError(f"Error parsing YAML file: {e}") from e
 
 def validate_config_keys(config: Dict[str, Any], required_keys: List[str]) -> None:
     """Validate that all required keys are present in config."""
@@ -116,11 +117,11 @@ def check_or_create_folder(output_folder: str, name: str) -> None:
         try:
             os.makedirs(output_folder, exist_ok=True)
         except OSError as e:
-            raise OSError(f"Could not create {name} '{output_folder}': {e}")
+            raise OSError(f"Could not create {name} '{output_folder}': {e}") from e
 
 def clear_folder(folder_path: str) -> None:
     """Clear content at folder_path."""
-    import shutil
+    import shutil  # pylint: disable=import-outside-toplevel
 
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
@@ -128,5 +129,113 @@ def clear_folder(folder_path: str) -> None:
             if os.path.isfile(file_path) or os.path.islink(file_path):
                 os.remove(file_path)
                 print(f'Deleted file: {file_path}')
-        except Exception as e:
+        except OSError as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
+
+def parse_obs_def_ocean_mod(rst_file_path: str) -> Tuple[Dict[str, str], Dict[str, List[str]]]:
+    """Parse obs_def_ocean_mod.rst file to extract observation type definitions.
+
+    Args:
+        rst_file_path: Path to the obs_def_ocean_mod.rst file
+
+    Returns:
+        Tuple containing:
+        - obs_type_to_qty: Dictionary mapping observation types to their QTY values
+        - qty_to_obs_types: Dictionary mapping QTY values to lists of observation types
+
+    Raises:
+        FileNotFoundError: If the RST file doesn't exist
+        ValueError: If the type definitions section isn't found or is malformed
+    """
+    if not os.path.isfile(rst_file_path):
+        raise FileNotFoundError(f"RST file '{rst_file_path}' does not exist")
+
+    obs_type_to_qty = {}
+    qty_to_obs_types = {}
+
+    try:
+        with open(rst_file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except IOError as e:
+        raise IOError(f"Could not read RST file '{rst_file_path}': {e}") from e
+
+    # Find the section between BEGIN and END markers
+    begin_pattern = r'! BEGIN DART PREPROCESS TYPE DEFINITIONS'
+    end_pattern = r'! END DART PREPROCESS TYPE DEFINITIONS'
+
+    begin_match = re.search(begin_pattern, content)
+    end_match = re.search(end_pattern, content)
+
+    if not begin_match or not end_match:
+        raise ValueError(f"Could not find type definitions section in '{rst_file_path}'")
+
+    # Extract the section content
+    section_content = content[begin_match.end():end_match.start()]
+
+    # Parse each line in the section
+    for line in section_content.split('\n'):
+        line = line.strip()
+        if not line or not line.startswith('!'):
+            continue
+
+        # Remove the leading '!' and whitespace
+        line = line[1:].strip()
+        if not line:
+            continue
+
+        # Parse the line format: OBS_TYPE, QTY_TYPE, [COMMON_CODE]
+        parts = [part.strip() for part in line.split(',')]
+        if len(parts) < 2:
+            continue
+
+        obs_type = parts[0].strip()
+        qty_type = parts[1].strip()
+
+        if obs_type and qty_type:
+            obs_type_to_qty[obs_type] = qty_type
+
+            if qty_type not in qty_to_obs_types:
+                qty_to_obs_types[qty_type] = []
+            qty_to_obs_types[qty_type].append(obs_type)
+
+    if not obs_type_to_qty:
+        raise ValueError(f"No observation type definitions found in '{rst_file_path}'")
+
+    return obs_type_to_qty, qty_to_obs_types
+
+def validate_and_expand_obs_types(obs_types_list: List[str], rst_file_path: str) -> List[str]:
+    """Validate and expand observation types list.
+
+    Args:
+        obs_types_list: List of observation types from config, may include ALL_<FIELD> entries
+        rst_file_path: Path to the obs_def_ocean_mod.rst file
+
+    Returns:
+        Expanded list of valid observation types
+
+    Raises:
+        ValueError: If any observation type is invalid or expansion fails
+    """
+    obs_type_to_qty, qty_to_obs_types = parse_obs_def_ocean_mod(rst_file_path)
+
+    expanded_types = set()
+
+    for obs_type in obs_types_list:
+        if obs_type.startswith('ALL_'):
+            # Extract the field name and create the QTY pattern
+            field_name = obs_type[4:]  # Remove 'ALL_' prefix
+            qty_pattern = f'QTY_{field_name}'
+
+            if qty_pattern in qty_to_obs_types:
+                expanded_types.update(qty_to_obs_types[qty_pattern])
+            else:
+                raise ValueError(f"No observation types found for '{obs_type}' "
+                               f"(looking for {qty_pattern})")
+        else:
+            # Regular observation type - validate it exists
+            if obs_type not in obs_type_to_qty:
+                raise ValueError(f"Invalid observation type '{obs_type}'. "
+                               f"Must be one of: {list(obs_type_to_qty.keys())}")
+            expanded_types.add(obs_type)
+
+    return sorted(list(expanded_types))
