@@ -255,6 +255,24 @@ class WorkflowModelObs(workflow.Workflow):
         self._namelist.update_namelist_param(
             "model_nml", "ocean_geometry", self.config['ocean_geometry']
         )
+        
+        # Update observation types if specified in config
+        if 'use_these_obs' in self.config:
+            print("Processing observation types from config...")
+            rst_file_path = os.path.join(
+                self.config['perfect_model_obs_dir'],
+                '../../../observations/forward_operators/obs_def_ocean_mod.rst'
+            )
+            try:
+                expanded_obs_types = config_utils.validate_and_expand_obs_types(
+                    self.config['use_these_obs'], rst_file_path
+                )
+                print(f"Expanded observation types: {expanded_obs_types}")
+                self._namelist.update_obs_kind_nml(expanded_obs_types)
+                print("Updated obs_kind_nml section with observation types")
+            except (FileNotFoundError, ValueError) as e:
+                print(f"Warning: Could not process observation types: {e}")
+                print("Continuing with existing obs_kind_nml configuration")
 
     def _process_with_time_matching(self, model_in_files: List[str], obs_in_files: List[str],
                                   trim_obs: bool, hull_polygon: Optional[Any], 

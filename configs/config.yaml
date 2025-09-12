@@ -19,3 +19,9 @@ output_folder: /path/to/pmo/out_obs_seq_in/
 input_nml_bck: /path/to/pmo/input_bckp
 trimmed_obs_folder: /path/to/pmo/out_trimmed_obs_in
 parquet_folder: /path/to/pmo/out_parquet/
+
+# Observation types to assimilate (can include ALL_<FIELD> entries)
+use_these_obs:
+  - FLOAT_TEMPERATURE
+  - APB_SALINITY
+  - ALL_TEMPERATURE
