@@ -4,7 +4,6 @@ import argparse
 import sys
 from typing import Optional
 
-from . import perfect_model_obs
 from ..io.time_averaging import time_average_from_config
 
 

@@ -7,6 +7,7 @@
 Current:
 - Batch processing of model and observation files
 - Generation of diagnostic and comparison files in Parquet format
+- **Time-averaging of MOM6 NetCDF files** with configurable resampling (monthly, seasonal, rolling, custom)
 - Robust YAML configuration and command-line interface
 - Designed for extensibility and reproducibility
 - Ocean models supported: MOM6
@@ -22,7 +23,7 @@ Future:
 The toolkit is organized into logical modules:
 
 - **`utils/`** - Configuration and namelist file utilities
-- **`io/`** - File handling, model grids, and observation sequence processing
+- **`io/`** - File handling, model grids, observation sequence processing, and time averaging
 - **`workflows/`** - High-level workflow orchestration
 - **`cli/`** - Command-line interfaces
 
@@ -142,6 +143,94 @@ required_keys = workflow.get_required_config_keys()
 
 workflow.run()
 ```
+
+## MOM6 Time Averaging
+
+CrocoCamp includes a powerful time-averaging tool for MOM6 NetCDF output files. This tool performs configurable temporal resampling while maintaining full compatibility with CrocoCamp's `WorkflowModelObs` workflow.
+
+### Supported Averaging Types
+
+- **Monthly**: One output file per calendar month
+- **Seasonal**: One output file per meteorological season (DJF, MAM, JJA, SON) 
+- **Yearly**: One output file per calendar year
+- **Rolling**: Single output file with rolling mean time series
+- **Custom**: Flexible resampling using pandas frequency strings
+
+### Command Line Usage
+
+```bash
+# Basic time averaging
+crococamp time-average config_time_averaging.yaml
+
+# Show help
+crococamp time-average --help
+```
+
+### Configuration File
+
+Create a YAML configuration file specifying your averaging parameters:
+
+```yaml
+# MOM6 Time Averaging Configuration
+input_files_pattern: "/path/to/mom6/files/*.nc"
+output_directory: "/path/to/output"
+averaging_window: "monthly"
+
+# Optional: specify which variables to process
+variables:
+  - thetao    # Temperature
+  - so        # Salinity  
+  - SSH       # Sea surface height
+  - tos       # Surface temperature
+```
+
+### Examples
+
+**Monthly Averaging:**
+```yaml
+averaging_window: "monthly"
+```
+
+**Rolling Average:**
+```yaml
+averaging_window:
+  type: rolling
+  window_size: "30D"  # 30-day rolling window
+  center: true
+```
+
+**Custom Frequency:**
+```yaml
+averaging_window:
+  type: custom
+  freq: "10D"  # 10-day averages
+```
+
+### Programmatic Usage
+
+```python
+from crococamp.io.time_averaging import MOM6TimeAverager, time_average_from_config
+
+# Using configuration file
+output_files = time_average_from_config("config.yaml")
+
+# Using class directly
+averager = MOM6TimeAverager("config.yaml")
+output_files = averager.run()
+```
+
+### Key Features
+
+- **Scalable**: Uses dask for memory-efficient processing of large datasets
+- **Smart interval detection**: Automatically extracts native model time interval
+- **Validation**: Prevents averaging windows shorter than native interval
+- **Compatible**: Maintains MOM6 variable naming and attributes for CrocoCamp workflows
+- **Extensible**: Designed for easy extension to other ocean models
+
+### See Also
+
+- `examples/mom6_time_averaging_demo.ipynb` - Comprehensive notebook with examples
+- `config_time_averaging_example.yaml` - Sample configuration file
 
 ## Observation Types Configuration
 

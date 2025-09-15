@@ -1,0 +1,40 @@
+# MOM6 Time Averaging Configuration Example
+
+# Glob pattern for input MOM6 NetCDF files
+input_files_pattern: "/path/to/mom6/files/*.nc"
+
+# Output directory for averaged files  
+output_directory: "/path/to/output"
+
+# Averaging window specification
+# Options:
+# - 'monthly': Average by calendar months (one file per month)
+# - 'seasonal': Average by seasons (one file per season)  
+# - 'yearly': Average by calendar years (one file per year)
+# - Rolling average: Use dict with 'type': 'rolling', 'window_size': '7D', 'center': true
+# - Custom frequency: Use dict with 'type': 'custom', 'freq': '10D'
+averaging_window: "monthly"
+
+# Optional: Variables to include in averaging (if not specified, all variables are processed)
+# variables:
+#   - thetao    # Temperature
+#   - so        # Salinity  
+#   - SSH       # Sea surface height
+#   - tos       # Surface temperature
+#   - sos       # Surface salinity
+
+# Examples of other averaging windows:
+#
+# Weekly rolling average (7-day window):
+# averaging_window:
+#   type: rolling
+#   window_size: "7D"
+#   center: true
+#
+# 10-day custom frequency:
+# averaging_window:
+#   type: custom
+#   freq: "10D"
+#
+# Seasonal averaging:
+# averaging_window: "seasonal"
