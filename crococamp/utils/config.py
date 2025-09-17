@@ -1,10 +1,59 @@
 """Configuration utilities for CrocoCamp workflows."""
 
 from datetime import timedelta
+import glob
 import os
 import re
 from typing import Any, Dict, List, Tuple
 import yaml
+
+
+def load_yaml_config(config_path: str) -> Dict[str, Any]:
+    """Load configuration from YAML file.
+    
+    This is a general-purpose YAML config loader that can be used
+    by different modules in CrocoCamp.
+    
+    Args:
+        config_path: Path to YAML configuration file
+        
+    Returns:
+        Configuration dictionary
+        
+    Raises:
+        FileNotFoundError: If config file doesn't exist
+        ValueError: If config file is invalid YAML
+    """
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file '{config_path}' does not exist")
+        
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            
+        if config is None:
+            config = {}
+            
+        return config
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing YAML configuration file: {e}") from e
+
+
+def validate_file_pattern(pattern: str) -> None:
+    """Validate that a file glob pattern exists and matches files.
+    
+    Args:
+        pattern: File glob pattern
+        
+    Raises:
+        ValueError: If pattern is empty or matches no files
+    """
+    if not pattern:
+        raise ValueError("File pattern cannot be empty")
+        
+    files = glob.glob(pattern)
+    if not files:
+        raise ValueError(f"No files found matching pattern: {pattern}")
 
 
 def resolve_path(path: str, config_file: str) -> str:
@@ -16,22 +65,22 @@ def resolve_path(path: str, config_file: str) -> str:
 
 
 def read_config(config_file: str) -> Dict[str, Any]:
-    """Read configuration from YAML file."""
-    if not os.path.exists(config_file):
-        raise FileNotFoundError(f"Config file '{config_file}' does not exist")
+    """Read configuration from YAML file for perfect model obs workflows.
+    
+    This function extends the general load_yaml_config with specific
+    operations needed for perfect model obs workflows.
+    """
+    # Use the general YAML loader
+    config = load_yaml_config(config_file)
+    
+    # Perform specific operations for perfect model obs configs
+    for key in config:
+        if isinstance(config[key], str):
+            config[key] = resolve_path(config[key], config_file)
 
-    try:
-        with open(config_file, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-        for key in config:
-            if isinstance(config[key], str):
-                config[key] = resolve_path(config[key], config_file)
-
-        config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
-        config = convert_time_window(config)
-        return config
-    except yaml.YAMLError as e:
-        raise ValueError(f"Error parsing YAML file: {e}") from e
+    config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
+    config = convert_time_window(config)
+    return config
 
 def validate_config_keys(config: Dict[str, Any], required_keys: List[str]) -> None:
     """Validate that all required keys are present in config."""

@@ -1,0 +1,44 @@
+# MOM6 Time Averaging Configuration Example
+
+# Glob pattern for input MOM6 NetCDF files
+input_files_pattern: "/path/to/mom6/files/*.nc"
+
+# Output directory for averaged files  
+output_directory: "/path/to/output"
+
+# Averaging window specification
+# Consistent format for all averaging types:
+averaging_window:
+  type: predefined
+  window_size: "monthly"
+
+# Examples of other averaging windows:
+#
+# Seasonal averaging:
+# averaging_window:
+#   type: predefined  
+#   window_size: "seasonal"
+#
+# Yearly averaging:
+# averaging_window:
+#   type: predefined
+#   window_size: "yearly"
+#
+# Weekly rolling average (7-day window):
+# averaging_window:
+#   type: rolling
+#   window_size: "7D"
+#   center: true
+#
+# 10-day custom frequency:
+# averaging_window:
+#   type: custom
+#   freq: "10D"
+
+# Optional: Variables to include in averaging (if not specified, all variables are processed)
+# variables:
+#   - thetao    # Temperature
+#   - so        # Salinity  
+#   - SSH       # Sea surface height
+#   - tos       # Surface temperature
+#   - sos       # Surface salinity
