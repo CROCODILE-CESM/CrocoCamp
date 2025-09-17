@@ -256,7 +256,11 @@ class TimeAverager(ABC):
             return self._perform_rolling_averaging(dataset, output_dir, window_config)
             
         elif window_type == 'custom':
-            return self._perform_custom_averaging(dataset, output_dir, window_config)
+            freq = window_config['freq']
+            # Create custom formatter with frequency
+            custom_formatter = lambda label: self._format_custom_period(label, freq)
+            return self._perform_period_averaging(
+                dataset, output_dir, freq, 'custom', custom_formatter)
             
         else:
             raise ValueError(f"Unsupported averaging window type: {window_type}")
@@ -345,6 +349,14 @@ class TimeAverager(ABC):
         season = season_names.get(timestamp_month, f'S{(timestamp_month-1)//3 + 1}')
         return f'{timestamp_year}-{season}'
     
+    def _format_custom_period(self, label, freq: str) -> str:
+        """Format custom period label with frequency prefix."""
+        if hasattr(label, 'strftime'):
+            period_str = label.strftime('%Y-%m-%d')
+        else:
+            period_str = str(label).split('T')[0]  # Extract date part
+        return f"{freq}_{period_str}"
+
     def _format_yearly_period(self, label) -> str:
         """Format yearly period label."""
         if hasattr(label, 'year'):
@@ -428,49 +440,6 @@ class TimeAverager(ABC):
         
         return [filepath]
 
-    def _perform_custom_averaging(self, dataset: xr.Dataset, output_dir: str,
-                                window_config: Dict[str, Any]) -> List[str]:
-        """Perform custom frequency resampling."""
-        freq = window_config['freq']
-        output_files = []
-        
-        # Group by custom frequency
-        grouped = dataset.resample(time=freq)
-        
-        for label, group in grouped:
-            if len(group.time) == 0:
-                continue
-                
-            # Calculate average for this group
-            avg = group.mean(dim='time', keep_attrs=True)
-            
-            # Update time coordinate - keep as array
-            avg = avg.expand_dims('time')
-            avg = avg.assign_coords(time=[label])
-            
-            # Generate filename based on the frequency and period
-            if hasattr(label, 'strftime'):
-                period_str = label.strftime('%Y-%m-%d')
-            else:
-                period_str = str(label).split('T')[0]  # Extract date part
-                
-            filename = self._generate_output_filename('custom', f"{freq}_{period_str}")
-            filepath = os.path.join(output_dir, filename)
-            
-            # Save to file with proper encoding for timedelta variables
-            encoding = {}
-            if 'average_DT' in avg.variables:
-                # Encode timedelta as float64 in days
-                encoding['average_DT'] = {
-                    'dtype': 'float64',
-                    'units': 'days'
-                }
-            
-            avg.to_netcdf(filepath, encoding=encoding)
-            output_files.append(filepath)
-            
-        return output_files
-        
     def time_average(self) -> List[str]:
         """Perform time averaging on input files.
         
