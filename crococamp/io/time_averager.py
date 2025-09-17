@@ -241,11 +241,14 @@ class TimeAverager(ABC):
         if window_type == 'predefined':
             window_size = window_config['window_size']
             if window_size == 'monthly':
-                return self._perform_monthly_averaging(dataset, output_dir)
+                return self._perform_period_averaging(
+                    dataset, output_dir, 'MS', 'month', self._format_monthly_period)
             elif window_size == 'seasonal':
-                return self._perform_seasonal_averaging(dataset, output_dir)
+                return self._perform_period_averaging(
+                    dataset, output_dir, 'QS-DEC', 'season', self._format_seasonal_period)
             elif window_size == 'yearly':
-                return self._perform_yearly_averaging(dataset, output_dir)
+                return self._perform_period_averaging(
+                    dataset, output_dir, 'YS', 'year', self._format_yearly_period)
             else:
                 raise ValueError(f"Unsupported predefined window size: {window_size}")
                 
@@ -351,21 +354,6 @@ class TimeAverager(ABC):
             ts_str = str(label)
             timestamp = pd.Timestamp(ts_str)
             return f"{timestamp.year:04d}"
-
-    def _perform_monthly_averaging(self, dataset: xr.Dataset, output_dir: str) -> List[str]:
-        """Perform monthly averaging with one file per month."""
-        return self._perform_period_averaging(
-            dataset, output_dir, 'MS', 'month', self._format_monthly_period)
-
-    def _perform_seasonal_averaging(self, dataset: xr.Dataset, output_dir: str) -> List[str]:
-        """Perform seasonal averaging with one file per season."""
-        return self._perform_period_averaging(
-            dataset, output_dir, 'QS-DEC', 'season', self._format_seasonal_period)
-
-    def _perform_yearly_averaging(self, dataset: xr.Dataset, output_dir: str) -> List[str]:
-        """Perform yearly averaging with one file per year."""
-        return self._perform_period_averaging(
-            dataset, output_dir, 'YS', 'year', self._format_yearly_period)
 
     def _perform_rolling_averaging(self, dataset: xr.Dataset, output_dir: str, 
                                  window_config: Dict[str, Any]) -> List[str]:
