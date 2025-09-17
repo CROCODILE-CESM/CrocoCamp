@@ -127,6 +127,152 @@ def create_test_config(input_pattern: str, output_dir: str,
     }
 
 
+def test_daily_and_weekly_averaging():
+    """Test daily and weekly averaging modes with unified testing approach."""
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create test data with hourly frequency for better daily/weekly testing
+        times = pd.date_range('2010-01-01', '2010-01-14', freq='6h')  # 14 days, 4 points per day
+        dataset = create_mock_mom6_dataset(times)
+        
+        input_file = os.path.join(temp_dir, 'test_input_hourly.nc')
+        dataset.to_netcdf(input_file)
+        
+        output_dir = os.path.join(temp_dir, 'output')
+        os.makedirs(output_dir)
+        
+        # Test configurations to check
+        test_cases = [
+            {
+                'name': 'daily_custom',
+                'config': {'type': 'custom', 'freq': '1D'},
+                'expected_files': 14,  # 14 days
+                'pattern': 'custom'
+            },
+            {
+                'name': 'weekly_custom', 
+                'config': {'type': 'custom', 'freq': '7D'},
+                'expected_files': 2,  # 2 weeks
+                'pattern': 'custom'
+            },
+            {
+                'name': 'weekly_rolling',
+                'config': {'type': 'rolling', 'window_size': '7D', 'center': False},
+                'expected_files': 1,  # Single rolling output
+                'pattern': 'rolling'
+            }
+        ]
+        
+        for case in test_cases:
+            # Create config for this test case
+            config = create_test_config(input_file, output_dir, case['config'])
+            config_file = os.path.join(temp_dir, f'config_{case["name"]}.yaml')
+            
+            with open(config_file, 'w') as f:
+                yaml.dump(config, f)
+            
+            # Run averaging
+            averager = MOM6TimeAverager(config_file)
+            output_files = averager.time_average()
+            
+            # Validate results
+            if case['config']['type'] == 'rolling':
+                # Rolling averages create single file
+                assert len(output_files) == case['expected_files']
+            else:
+                # Custom frequency creates multiple files
+                assert len(output_files) == case['expected_files']
+            
+            # Check filenames contain expected patterns
+            for output_file in output_files:
+                filename = os.path.basename(output_file)
+                assert case['pattern'] in filename
+                assert filename.endswith('.nc')
+                
+                # Verify file structure
+                with xr.open_dataset(output_file) as ds:
+                    assert 'thetao' in ds.variables
+                    assert 'so' in ds.variables
+                    assert len(ds.time) > 0
+            
+            # Clean up output files for next test
+            for output_file in output_files:
+                os.remove(output_file)
+
+
+def test_comprehensive_averaging_modes():
+    """Test all predefined averaging modes systematically."""
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create mock data spanning multiple years for comprehensive testing
+        times = pd.date_range('2010-01-01', '2011-12-31', freq='D')  # 2 full years
+        dataset = create_mock_mom6_dataset(times)
+        
+        input_file = os.path.join(temp_dir, 'test_multi_year.nc')
+        dataset.to_netcdf(input_file)
+        
+        output_dir = os.path.join(temp_dir, 'output')
+        os.makedirs(output_dir)
+        
+        # Test all predefined modes
+        predefined_cases = [
+            {
+                'window_size': 'monthly',
+                'expected_files': 24,  # 2 years * 12 months
+                'file_pattern': 'month'
+            },
+            {
+                'window_size': 'seasonal', 
+                'expected_files': 9,   # 2 years + extra season for boundaries
+                'file_pattern': 'season'
+            },
+            {
+                'window_size': 'yearly',
+                'expected_files': 2,   # 2 years
+                'file_pattern': 'year'
+            }
+        ]
+        
+        for case in predefined_cases:
+            print(f"Testing {case['window_size']} averaging...")
+            
+            # Create config
+            config = create_test_config(input_file, output_dir, {
+                'type': 'predefined',
+                'window_size': case['window_size']
+            })
+            config_file = os.path.join(temp_dir, f'config_{case["window_size"]}.yaml')
+            
+            with open(config_file, 'w') as f:
+                yaml.dump(config, f)
+            
+            # Run averaging
+            averager = MOM6TimeAverager(config_file)
+            output_files = averager.time_average()
+            
+            # Validate results
+            assert len(output_files) == case['expected_files'], \
+                f"Expected {case['expected_files']} files for {case['window_size']}, got {len(output_files)}"
+            
+            # Check all files
+            for output_file in output_files:
+                filename = os.path.basename(output_file)
+                assert case['file_pattern'] in filename
+                
+                # Verify file content
+                with xr.open_dataset(output_file) as ds:
+                    assert len(ds.time) == 1  # Each file should have 1 averaged time point
+                    assert 'thetao' in ds.variables
+                    assert 'so' in ds.variables
+                    assert 'SSH' in ds.variables
+            
+            # Clean up for next test
+            for output_file in output_files:
+                os.remove(output_file)
+        
+        print("All predefined averaging modes tested successfully!")
+
+
 def test_monthly_averaging():
     """Test monthly averaging functionality."""
     
