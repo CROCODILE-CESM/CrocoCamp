@@ -11,7 +11,7 @@ import pytest
 import xarray as xr
 import yaml
 
-from crococamp.io.time_averaging import MOM6TimeAverager, time_average_from_config
+from crococamp.io.mom6_time_averager import MOM6TimeAverager, time_average_from_config
 
 
 def create_mock_mom6_dataset(times: pd.DatetimeIndex, 
@@ -143,8 +143,11 @@ def test_monthly_averaging():
         output_dir = os.path.join(temp_dir, 'output')
         os.makedirs(output_dir)
         
-        # Create config
-        config = create_test_config(input_file, output_dir, 'monthly')
+        # Create config with new format
+        config = create_test_config(input_file, output_dir, {
+            'type': 'predefined',
+            'window_size': 'monthly'
+        })
         config_file = os.path.join(temp_dir, 'config.yaml')
         
         with open(config_file, 'w') as f:
@@ -152,17 +155,24 @@ def test_monthly_averaging():
         
         # Run averaging
         averager = MOM6TimeAverager(config_file)
-        output_files = averager.run()
+        output_files = averager.time_average()
         
         # Should create 3 monthly files
         assert len(output_files) == 3
         
-        # Check filenames
-        expected_files = ['avg_month_2010-01.nc', 'avg_month_2010-02.nc', 'avg_month_2010-03.nc']
+        # Check filenames - new format includes original file base name
         actual_filenames = [os.path.basename(f) for f in output_files]
         
-        for expected in expected_files:
-            assert expected in actual_filenames
+        # All files should have the right pattern with month and time info
+        for filename in actual_filenames:
+            assert '_month_' in filename
+            assert filename.endswith('.nc')
+            assert '2010-' in filename  # Should have year-month pattern
+            
+        # Check that we have files for each month
+        month_patterns = ['2010-01', '2010-02', '2010-03']
+        for pattern in month_patterns:
+            assert any(pattern in f for f in actual_filenames), f"No file found for {pattern}"
         
         # Check that files exist and have correct structure
         for output_file in output_files:
@@ -206,7 +216,7 @@ def test_rolling_averaging():
         
         # Run averaging
         averager = MOM6TimeAverager(config_file)
-        output_files = averager.run()
+        output_files = averager.time_average()
         
         # Should create 1 file for rolling average
         assert len(output_files) == 1
@@ -233,12 +243,17 @@ def test_config_validation():
         with open(config_file, 'w') as f:
             yaml.dump(incomplete_config, f)
         
-        with pytest.raises(ValueError, match="Missing required configuration keys"):
+        with pytest.raises(ValueError, match="Required configuration keys missing"):
             MOM6TimeAverager(config_file)
+        
+        # Create a dummy .nc file for file pattern validation
+        dummy_file = os.path.join(temp_dir, 'dummy.nc')
+        with open(dummy_file, 'wb') as f:
+            f.write(b'dummy')
         
         # Test invalid averaging window
         invalid_config = {
-            'input_files_pattern': '*.nc',
+            'input_files_pattern': os.path.join(temp_dir, '*.nc'),
             'output_directory': temp_dir,
             'averaging_window': 'invalid_window'
         }
@@ -246,7 +261,7 @@ def test_config_validation():
         with open(config_file, 'w') as f:
             yaml.dump(invalid_config, f)
         
-        with pytest.raises(ValueError, match="Invalid averaging_window"):
+        with pytest.raises(ValueError, match="Invalid averaging window string"):
             MOM6TimeAverager(config_file)
 
 
@@ -269,7 +284,10 @@ def test_native_interval_extraction():
         dataset.to_netcdf(input_file)
         
         output_dir = os.path.join(temp_dir, 'output')
-        config = create_test_config(input_file, output_dir, 'monthly')
+        config = create_test_config(input_file, output_dir, {
+            'type': 'predefined', 
+            'window_size': 'monthly'
+        })
         config_file = os.path.join(temp_dir, 'config.yaml')
         
         with open(config_file, 'w') as f:
@@ -279,7 +297,7 @@ def test_native_interval_extraction():
         
         # Load dataset to test interval extraction  
         with xr.open_dataset(input_file, decode_timedelta=False) as ds:
-            interval = averager._extract_native_time_interval(ds)
+            interval = averager._detect_native_interval(ds)
             assert interval == pd.Timedelta(days=1)
 
 
@@ -295,7 +313,10 @@ def test_workflow_compatibility():
         dataset.to_netcdf(input_file)
         
         output_dir = os.path.join(temp_dir, 'output')
-        config = create_test_config(input_file, output_dir, 'monthly')
+        config = create_test_config(input_file, output_dir, {
+            'type': 'predefined',
+            'window_size': 'monthly'
+        })
         config_file = os.path.join(temp_dir, 'config.yaml')
         
         with open(config_file, 'w') as f:
