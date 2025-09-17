@@ -415,8 +415,32 @@ class TimeAverager(ABC):
             # Default to reasonable window if only one time point
             window_steps = max(1, int(window_timedelta.total_seconds() / 86400))  # days
         
-        # Perform rolling mean using integer window size
-        rolling_avg = dataset.rolling(time=window_steps, center=center).mean()
+        # Split dataset into regular variables and timedelta variables
+        timedelta_vars = {}
+        regular_vars = {}
+        
+        for var_name in dataset.data_vars:
+            var = dataset[var_name]
+            if var.dtype.kind == 'm':  # timedelta
+                timedelta_vars[var_name] = var
+            else:
+                regular_vars[var_name] = var
+        
+        # Create dataset with only regular variables for rolling operation
+        regular_dataset = xr.Dataset(
+            data_vars=regular_vars,
+            coords=dataset.coords,
+            attrs=dataset.attrs
+        )
+        
+        # Perform rolling mean on regular variables
+        rolling_avg = regular_dataset.rolling(time=window_steps, center=center).mean()
+        
+        # Handle timedelta variables separately (they should stay constant for MOM6)
+        for var_name, var in timedelta_vars.items():
+            # For timedelta variables like average_DT, just copy the values
+            # since they represent model time intervals which don't change
+            rolling_avg[var_name] = var
         
         # Drop NaN values that result from rolling operation
         rolling_avg = rolling_avg.dropna(dim='time')
