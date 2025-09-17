@@ -1,0 +1,33 @@
+# ==========================================
+# CrocoCamp Time Window Configuration Example
+# ==========================================
+# Configuration for splitting obs_seq.in files into time windows
+
+# Path to DART's obs_sequence_tool executable directory
+dart_tools_dir: /path/to/DART/models/MOM6/work
+
+# Directory containing MOM6 model .nc files for determining time bounds
+model_files_folder: /path/to/model/files/
+
+# Directory containing observation files (obs_seq.in format)
+obs_seq_in_folder: /path/to/obs_seq_files/
+
+# Output directory for windowed obs_seq files
+output_folder: /path/to/windowed_obs_seq/
+
+# Template input.nml file for obs_sequence_tool
+input_nml_template: /path/to/input.nml.template
+
+# Averaging period specification (multiple formats supported)
+# Option 1: Dictionary format with explicit time components
+time_window:
+  days: 30     # Primary time window in days
+  hours: 0     # Additional hours
+  minutes: 0   # Additional minutes  
+  seconds: 0   # Additional seconds
+  weeks: 0     # Additional weeks (converted to days)
+  months: 0    # Additional months (converted to days, ~30 days/month)
+  years: 0     # Additional years (converted to days, ~365 days/year)
+
+# Option 2: String format (alternative, comment out time_window above to use)
+# averaging_period: "monthly"    # Options: "monthly", "yearly", "7D", "30D", etc.
