@@ -23,7 +23,7 @@ dependencies = [
 
 [project.scripts]
 perfect-model-obs = "crococamp.cli.perfect_model_obs:main"
-crococamp = "crococamp.cli.crococamp_cli:main"
+crococamp-time-average = "crococamp.cli.time_averaging:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

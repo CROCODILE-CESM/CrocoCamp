@@ -65,22 +65,22 @@ def resolve_path(path: str, config_file: str) -> str:
 
 
 def read_config(config_file: str) -> Dict[str, Any]:
-    """Read configuration from YAML file."""
-    if not os.path.exists(config_file):
-        raise FileNotFoundError(f"Config file '{config_file}' does not exist")
+    """Read configuration from YAML file for perfect model obs workflows.
+    
+    This function extends the general load_yaml_config with specific
+    operations needed for perfect model obs workflows.
+    """
+    # Use the general YAML loader
+    config = load_yaml_config(config_file)
+    
+    # Perform specific operations for perfect model obs configs
+    for key in config:
+        if isinstance(config[key], str):
+            config[key] = resolve_path(config[key], config_file)
 
-    try:
-        with open(config_file, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-        for key in config:
-            if isinstance(config[key], str):
-                config[key] = resolve_path(config[key], config_file)
-
-        config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
-        config = convert_time_window(config)
-        return config
-    except yaml.YAMLError as e:
-        raise ValueError(f"Error parsing YAML file: {e}") from e
+    config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
+    config = convert_time_window(config)
+    return config
 
 def validate_config_keys(config: Dict[str, Any], required_keys: List[str]) -> None:
     """Validate that all required keys are present in config."""

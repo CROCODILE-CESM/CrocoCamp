@@ -18,7 +18,8 @@ import pandas as pd
 import xarray as xr
 import yaml
 
-from ..utils.config import load_yaml_config, validate_file_pattern
+from ..utils.config import load_yaml_config, validate_file_pattern, check_or_create_folder
+from ..io.file_utils import get_sorted_files
 
 
 class TimeAverager(ABC):
@@ -60,11 +61,6 @@ class TimeAverager(ABC):
         # Use the utils config loader for general loading
         config = load_yaml_config(config_path)
         
-        # Only validate file pattern if it's provided (defer to _validate_config for required key check)
-        file_pattern = config.get('input_files_pattern')
-        if file_pattern:
-            validate_file_pattern(file_pattern)
-        
         return config
         
     def _validate_config(self) -> None:
@@ -79,11 +75,9 @@ class TimeAverager(ABC):
         if missing_keys:
             raise ValueError(f"Required configuration keys missing: {missing_keys}")
             
-        # Now validate file pattern if it wasn't validated earlier
+        # Validate file pattern here where it's required
         file_pattern = self.config.get('input_files_pattern')
-        if file_pattern and not hasattr(self, '_pattern_validated'):
-            validate_file_pattern(file_pattern)
-            self._pattern_validated = True
+        validate_file_pattern(file_pattern)
             
         # Validate averaging window format
         self._validate_averaging_window_config()
@@ -135,7 +129,13 @@ class TimeAverager(ABC):
             FileNotFoundError: If no files match the pattern
         """
         pattern = self.config['input_files_pattern']
-        files = sorted(glob.glob(pattern))
+        
+        # Extract directory and pattern from the full path
+        directory = os.path.dirname(pattern) or '.'
+        file_pattern = os.path.basename(pattern)
+        
+        # Use existing utility function
+        files = get_sorted_files(directory, file_pattern)
         
         if not files:
             raise FileNotFoundError(f"No files found matching pattern: {pattern}")
@@ -145,7 +145,7 @@ class TimeAverager(ABC):
     def _ensure_output_directory(self) -> None:
         """Create output directory if it doesn't exist."""
         output_dir = self.config['output_directory']
-        os.makedirs(output_dir, exist_ok=True)
+        check_or_create_folder(output_dir, "Output directory")
         
     @abstractmethod
     def _detect_native_interval(self, dataset: xr.Dataset) -> pd.Timedelta:
@@ -161,11 +161,10 @@ class TimeAverager(ABC):
             Native time interval as pandas Timedelta
         """
         
-    @abstractmethod
     def _generate_output_filename(self, period_type: str, period_str: str) -> str:
         """Generate output filename for a given period.
         
-        This method should be implemented by subclasses to handle
+        Default implementation that can be overridden by subclasses for
         model-specific filename conventions.
         
         Args:
@@ -175,6 +174,9 @@ class TimeAverager(ABC):
         Returns:
             Output filename
         """
+        # Default implementation - subclasses can override for model-specific naming
+        filename = f"averaged_{period_type}_{period_str}.nc"
+        return filename
     
     def _validate_averaging_window_vs_native(self, native_interval: pd.Timedelta, 
                                            requested_window: Dict[str, Any]) -> None:
@@ -256,142 +258,114 @@ class TimeAverager(ABC):
         else:
             raise ValueError(f"Unsupported averaging window type: {window_type}")
 
-    def _perform_monthly_averaging(self, dataset: xr.Dataset, output_dir: str) -> List[str]:
-        """Perform monthly averaging with one file per month."""
+    def _perform_period_averaging(self, dataset: xr.Dataset, output_dir: str, 
+                                 resample_rule: str, period_type: str,
+                                 period_formatter = None) -> List[str]:
+        """Generalized method to perform period-based averaging.
+        
+        Args:
+            dataset: Input dataset
+            output_dir: Output directory
+            resample_rule: pandas resample rule (e.g., 'MS', 'QS-DEC', 'YS')
+            period_type: Type of period for filename ('month', 'season', 'year')
+            period_formatter: Optional function to format period labels to strings
+            
+        Returns:
+            List of created file paths
+        """
         output_files = []
         
-        # Group by month
-        monthly_groups = dataset.resample(time='MS')  # Month start
+        # Group by the specified period
+        period_groups = dataset.resample(time=resample_rule)
         
-        for label, group in monthly_groups:
+        for label, group in period_groups:
             if len(group.time) == 0:
                 continue
                 
-            # Calculate monthly average
-            monthly_avg = group.mean(dim='time', keep_attrs=True)
+            # Calculate period average
+            period_avg = group.mean(dim='time', keep_attrs=True)
             
-            # Update time coordinate to represent the month - keep as array
-            monthly_avg = monthly_avg.expand_dims('time')
-            monthly_avg = monthly_avg.assign_coords(time=[label])
+            # Update time coordinate to represent the period - keep as array
+            period_avg = period_avg.expand_dims('time')
+            period_avg = period_avg.assign_coords(time=[label])
             
-            # Generate filename with year and month - handle cftime objects
-            if hasattr(label, 'year') and hasattr(label, 'month'):
-                period_str = f"{label.year:04d}-{label.month:02d}"
+            # Generate period string using formatter or default
+            if period_formatter:
+                period_str = period_formatter(label)
             else:
-                # Convert to string and parse
-                ts_str = str(label)
-                timestamp = pd.Timestamp(ts_str)
-                period_str = f"{timestamp.year:04d}-{timestamp.month:02d}"
+                # Default formatter handles cftime objects
+                if hasattr(label, 'strftime'):
+                    period_str = label.strftime('%Y-%m-%d')
+                else:
+                    period_str = str(label).split('T')[0]
             
-            filename = self._generate_output_filename('month', period_str)
+            filename = self._generate_output_filename(period_type, period_str)
             filepath = os.path.join(output_dir, filename)
             
             # Save to file with proper encoding for timedelta variables
             encoding = {}
-            if 'average_DT' in monthly_avg.variables:
+            if 'average_DT' in period_avg.variables:
                 # Encode timedelta as float64 in days
                 encoding['average_DT'] = {
                     'dtype': 'float64',
                     'units': 'days'
                 }
             
-            monthly_avg.to_netcdf(filepath, encoding=encoding)
+            period_avg.to_netcdf(filepath, encoding=encoding)
             output_files.append(filepath)
             
         return output_files
+
+    def _format_monthly_period(self, label) -> str:
+        """Format monthly period label."""
+        if hasattr(label, 'year') and hasattr(label, 'month'):
+            return f"{label.year:04d}-{label.month:02d}"
+        else:
+            # Convert to string and parse
+            ts_str = str(label)
+            timestamp = pd.Timestamp(ts_str)
+            return f"{timestamp.year:04d}-{timestamp.month:02d}"
+    
+    def _format_seasonal_period(self, label) -> str:
+        """Format seasonal period label."""
+        if hasattr(label, 'year') and hasattr(label, 'month'):
+            timestamp_year = label.year
+            timestamp_month = label.month
+        else:
+            # Convert to string and parse
+            ts_str = str(label)
+            timestamp = pd.Timestamp(ts_str) 
+            timestamp_year = timestamp.year
+            timestamp_month = timestamp.month
+            
+        season_names = {12: 'DJF', 3: 'MAM', 6: 'JJA', 9: 'SON'}
+        season = season_names.get(timestamp_month, f'S{(timestamp_month-1)//3 + 1}')
+        return f'{timestamp_year}-{season}'
+    
+    def _format_yearly_period(self, label) -> str:
+        """Format yearly period label."""
+        if hasattr(label, 'year'):
+            return f"{label.year:04d}"
+        else:
+            # Convert to string and parse
+            ts_str = str(label)
+            timestamp = pd.Timestamp(ts_str)
+            return f"{timestamp.year:04d}"
+
+    def _perform_monthly_averaging(self, dataset: xr.Dataset, output_dir: str) -> List[str]:
+        """Perform monthly averaging with one file per month."""
+        return self._perform_period_averaging(
+            dataset, output_dir, 'MS', 'month', self._format_monthly_period)
 
     def _perform_seasonal_averaging(self, dataset: xr.Dataset, output_dir: str) -> List[str]:
         """Perform seasonal averaging with one file per season."""
-        output_files = []
-        
-        # Group by season (quarterly)
-        seasonal_groups = dataset.resample(time='QS-DEC')  # Seasons starting in Dec
-        
-        for label, group in seasonal_groups:
-            if len(group.time) == 0:
-                continue
-                
-            # Calculate seasonal average
-            seasonal_avg = group.mean(dim='time', keep_attrs=True)
-            
-            # Update time coordinate to represent the season - keep as array
-            seasonal_avg = seasonal_avg.expand_dims('time')
-            seasonal_avg = seasonal_avg.assign_coords(time=[label])
-            
-            # Generate filename with year and season - handle cftime objects
-            if hasattr(label, 'year') and hasattr(label, 'month'):
-                timestamp_year = label.year
-                timestamp_month = label.month
-            else:
-                # Convert to string and parse
-                ts_str = str(label)
-                timestamp = pd.Timestamp(ts_str) 
-                timestamp_year = timestamp.year
-                timestamp_month = timestamp.month
-                
-            season_names = {12: 'DJF', 3: 'MAM', 6: 'JJA', 9: 'SON'}
-            season = season_names.get(timestamp_month, f'S{(timestamp_month-1)//3 + 1}')
-            period_str = f'{timestamp_year}-{season}'
-            filename = self._generate_output_filename('season', period_str)
-            filepath = os.path.join(output_dir, filename)
-            
-            # Save to file with proper encoding for timedelta variables
-            encoding = {}
-            if 'average_DT' in seasonal_avg.variables:
-                # Encode timedelta as float64 in days
-                encoding['average_DT'] = {
-                    'dtype': 'float64',
-                    'units': 'days'
-                }
-            
-            seasonal_avg.to_netcdf(filepath, encoding=encoding)
-            output_files.append(filepath)
-            
-        return output_files
+        return self._perform_period_averaging(
+            dataset, output_dir, 'QS-DEC', 'season', self._format_seasonal_period)
 
     def _perform_yearly_averaging(self, dataset: xr.Dataset, output_dir: str) -> List[str]:
         """Perform yearly averaging with one file per year."""
-        output_files = []
-        
-        # Group by year
-        yearly_groups = dataset.resample(time='YS')  # Year start
-        
-        for label, group in yearly_groups:
-            if len(group.time) == 0:
-                continue
-                
-            # Calculate yearly average
-            yearly_avg = group.mean(dim='time', keep_attrs=True)
-            
-            # Update time coordinate to represent the year - keep as array 
-            yearly_avg = yearly_avg.expand_dims('time')
-            yearly_avg = yearly_avg.assign_coords(time=[label])
-            
-            # Generate filename with year - handle cftime objects
-            if hasattr(label, 'year'):
-                period_str = f"{label.year:04d}"
-            else:
-                # Convert to string and parse
-                ts_str = str(label)
-                timestamp = pd.Timestamp(ts_str)
-                period_str = f"{timestamp.year:04d}"
-                
-            filename = self._generate_output_filename('year', period_str)
-            filepath = os.path.join(output_dir, filename)
-            
-            # Save to file with proper encoding for timedelta variables
-            encoding = {}
-            if 'average_DT' in yearly_avg.variables:
-                # Encode timedelta as float64 in days
-                encoding['average_DT'] = {
-                    'dtype': 'float64',
-                    'units': 'days'
-                }
-            
-            yearly_avg.to_netcdf(filepath, encoding=encoding)
-            output_files.append(filepath)
-            
-        return output_files
+        return self._perform_period_averaging(
+            dataset, output_dir, 'YS', 'year', self._format_yearly_period)
 
     def _perform_rolling_averaging(self, dataset: xr.Dataset, output_dir: str, 
                                  window_config: Dict[str, Any]) -> List[str]:
@@ -535,7 +509,6 @@ class TimeAverager(ABC):
         try:
             dataset = xr.open_mfdataset(
                 input_files, 
-                chunks={'time': 50},  # Chunk along time dimension
                 combine='by_coords',
                 use_cftime=True,  # Handle non-standard calendars
                 data_vars=variables if variables else 'all'
@@ -545,7 +518,6 @@ class TimeAverager(ABC):
             warnings.warn(f"Failed to open with cftime, trying without: {e}")
             dataset = xr.open_mfdataset(
                 input_files,
-                chunks={'time': 50},
                 combine='by_coords', 
                 data_vars=variables if variables else 'all'
             )

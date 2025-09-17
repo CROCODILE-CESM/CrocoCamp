@@ -66,18 +66,12 @@ class MOM6TimeAverager(TimeAverager):
                     elif units == 'seconds':
                         return pd.Timedelta(seconds=dt_float)
                     else:
-                        warnings.warn(f"Unknown average_DT units '{units}', assuming days", 
-                                    UserWarning)
-                        return pd.Timedelta(days=dt_float)
+                        raise ValueError(f"Unknown average_DT units '{units}', expected 'days', 'hours', or 'seconds'")
         
-        # Method 2: Try global DT attribute
-        if 'DT' in dataset.attrs:
-            dt_value = float(dataset.attrs['DT'])
-            # DT global attribute is typically in seconds for MOM6
-            return pd.Timedelta(seconds=dt_value)
-        
-        # Method 3: Try time coordinate differences
+        # Method 2: Try time coordinate differences (removed DT global attribute method)
         if 'time' in dataset.coords:
+            warnings.warn("Could not find average_DT variable, trying time coordinate differences instead", 
+                         UserWarning)
             time_coord = dataset.coords['time']
             if len(time_coord) > 1:
                 # Calculate difference between first two time points
@@ -93,12 +87,10 @@ class MOM6TimeAverager(TimeAverager):
                     time0 = pd.Timestamp(time_coord.isel(time=0).values) 
                     return time1 - time0
         
-        # Default fallback - warn user as requested
-        warnings.warn("Could not determine native time interval from MOM6 dataset. "
-                     "Checked average_DT variable, DT global attribute, and time coordinate differences. "
-                     "Using default of 1 day. This may affect validation.",
-                     UserWarning)
-        return pd.Timedelta(days=1)
+        # Raise error instead of using default fallback
+        raise ValueError("Could not determine native time interval from MOM6 dataset. "
+                        "No average_DT variable found and unable to calculate from time coordinates. "
+                        "Please ensure the dataset has proper time interval information.")
     
     def _generate_output_filename(self, period_type: str, period_str: str) -> str:
         """Generate MOM6 output filename preserving original file relationships.
