@@ -3,13 +3,54 @@
 from typing import List, Optional, Tuple
 
 
+class ProfileConfig:
+    """Configuration for interactive profile visualization.
+
+    Provides default settings for the InteractiveProfileWidget with options for customization.
+    All parameters can be overridden during initialization.
+    """
+
+    def __init__(
+        self,
+        colormap: str = 'viridis',
+        figure_size: Tuple[int, int] = (10, 8),
+        marker_size: int = 50,
+        marker_alpha: float = 0.7,
+        invert_yaxis: bool = True,
+        grid: bool = True,
+        disallowed_axes: Optional[List[str]] = None
+    ) -> None:
+        """Initialize profile configuration.
+
+        Args:
+            colormap: Matplotlib colormap name for colored plots
+            figure_size: Figure size as (width, height) in inches
+            marker_size: Size of scatter plot markers
+            marker_alpha: Alpha transparency of markers
+            invert_yaxis: Whether to invert the y-axis (typical for depth profiles)
+            grid: Whether to show grid lines
+            disallowed_axes: Column names to exclude from axis selection dropdowns
+        """
+        self.colormap = colormap
+        self.figure_size = figure_size
+        self.marker_size = marker_size
+        self.marker_alpha = marker_alpha
+        self.invert_yaxis = invert_yaxis
+        self.grid = grid
+
+        if disallowed_axes is None:
+            self.disallowed_axes = ["time"]
+        else:
+            self.disallowed_axes = disallowed_axes
+
+
 class MapConfig:
     """Configuration for interactive map visualization.
-    
+
     Provides default settings for the InteractiveMapWidget with options for customization.
     All parameters can be overridden during initialization.
     """
-    
+
     def __init__(
         self,
         colormap: str = 'cividis',
@@ -23,7 +64,7 @@ class MapConfig:
         disallowed_plotvars: Optional[List[str]] = None
     ) -> None:
         """Initialize map configuration.
-        
+
         Args:
             colormap: Matplotlib colormap name
             plot_title: Base title for the plot
@@ -48,8 +89,9 @@ class MapConfig:
         self.scatter_size = scatter_size
         self.scatter_alpha = scatter_alpha
         self.default_window_hours = default_window_hours or (24 * 7 * 4)  # 4 weeks
-        
+
         if disallowed_plotvars is None:
             self.disallowed_plotvars = ["time", "type", "longitude", "latitude", "vertical"]
         else:
             self.disallowed_plotvars = disallowed_plotvars
+
