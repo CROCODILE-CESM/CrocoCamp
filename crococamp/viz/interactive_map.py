@@ -166,7 +166,7 @@ class InteractiveMapWidget:
         
         # Vertical coordinate slider for selecting the depth range to plot
         self.vrange_slider = widgets.FloatRangeSlider(
-            value=[self.vrange['min'],self.vrange['max']],
+            value=[self.vrange['min'], self.vrange['max']],
             min=self.vertical_limits['min'],
             max=self.vertical_limits['max'],
             step=0.1,
@@ -229,7 +229,7 @@ class InteractiveMapWidget:
         self.max_time = self._compute_if_needed(self.filtered_df['time'].max())
         self.total_hours = int((self.max_time - self.min_time).total_seconds() // 3600)
 
-        # update vertical coordinate date
+        # update vertical coordinate data
         vert_min = (self._compute_if_needed(self.df['vertical'].min()))
         vert_max = (self._compute_if_needed(self.df['vertical'].max()))
 
@@ -305,7 +305,7 @@ class InteractiveMapWidget:
             ]
             ref_df = self._compute_if_needed(
                 df_win[ ['latitude', 'longitude',self.plot_var] ]
-            ).reset_index()
+            )
 
             fig = plt.figure(figsize=self.config.figure_size)
             ax = plt.axes(projection=ccrs.PlateCarree())
