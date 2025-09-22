@@ -40,12 +40,14 @@ class InteractiveMapWidget:
         self.plot_var = None
         self.map_extent = None
         self.plot_title = None
+        self.vrange = None
         
         # Initialize widgets
+        self._calculate_vertical_limits()
+        self._calculate_map_extent()
         self._create_widgets()
         self._setup_callbacks()
-        self._calculate_map_extent()
-        
+
     def _is_dask_dataframe(self) -> bool:
         """Check if the dataframe is a dask DataFrame."""
         return hasattr(self.df, 'compute')
@@ -85,6 +87,22 @@ class InteractiveMapWidget:
             
         self.map_extent = (lon_min, lon_max, lat_min, lat_max)
         
+    def _calculate_vertical_limits(self) -> None:
+        """Calculate limits for vertical coordinate."""
+
+        # Auto-calculate extent with padding
+        vert_min = (self._compute_if_needed(self.df['vertical'].min()))
+        vert_max = (self._compute_if_needed(self.df['vertical'].max()))
+
+        self.vertical_limits = {}
+        self.vertical_limits["min"] = vert_min
+        self.vertical_limits["max"] = vert_max
+
+        if self.config.vrange is None:
+            self.vrange = self.vertical_limits
+        else:
+            self.vrange = self.config.vrange
+
     def _create_widgets(self) -> None:
         """Create all UI widgets."""
         # Output widget for plot display
@@ -146,6 +164,17 @@ class InteractiveMapWidget:
             continuous_update=False
         )
         
+        # Vertical coordinate slider for selecting the depth range to plot
+        self.vrange_slider = widgets.FloatRangeSlider(
+            value=[self.vrange['min'], self.vrange['max']],
+            min=self.vertical_limits['min'],
+            max=self.vertical_limits['max'],
+            step=0.1,
+            description='Vertical coordinate range:',
+            style={'description_width': 'initial'},
+            continuous_update=False
+        )
+
     def _setup_callbacks(self) -> None:
         """Set up widget observers."""
         self.refvar_dropdown.observe(self._on_refvar_change, names='value')
@@ -154,6 +183,7 @@ class InteractiveMapWidget:
         self.window_text.observe(self._on_window_change, names='value')
         self.center_slider.observe(self._on_center_change, names='value')
         self.colorbar_slider.observe(self._on_colorbar_change, names='value')
+        self.vrange_slider.observe(self._on_vrange_change, names='value')
         
     def parse_window(self, text: str) -> timedelta:
         """Parse a human-readable window string to a timedelta."""
@@ -198,6 +228,16 @@ class InteractiveMapWidget:
         self.min_time = self._compute_if_needed(self.filtered_df['time'].min())
         self.max_time = self._compute_if_needed(self.filtered_df['time'].max())
         self.total_hours = int((self.max_time - self.min_time).total_seconds() // 3600)
+
+        # update vertical coordinate data
+        vert_min = (self._compute_if_needed(self.df['vertical'].min()))
+        vert_max = (self._compute_if_needed(self.df['vertical'].max()))
+
+        self.vertical_limits = {}
+        self.vertical_limits["min"] = vert_min
+        self.vertical_limits["max"] = vert_max
+        if self.vrange is None:
+            self.vrange = self.vertical_limits
         
     def _update_center_slider(self, window_td):
         """Update center time slider options based on currently filtered data and window."""
@@ -259,12 +299,14 @@ class InteractiveMapWidget:
             t1 = center + window_td / 2
             df_win = self.filtered_df[
                 (self.filtered_df['time'] >= t0) &
-                (self.filtered_df['time'] <= t1)
+                (self.filtered_df['time'] <= t1) &
+                (self.filtered_df['vertical'] >= self.vrange['min']) &
+                (self.filtered_df['vertical'] <= self.vrange['max'])
             ]
             ref_df = self._compute_if_needed(
-                df_win.groupby(['latitude', 'longitude'])[self.plot_var].mean()
-            ).reset_index()
-            
+                df_win[ ['latitude', 'longitude',self.plot_var] ]
+            )
+
             fig = plt.figure(figsize=self.config.figure_size)
             ax = plt.axes(projection=ccrs.PlateCarree())
             ax.add_feature(cfeature.COASTLINE, linewidth=0.8)
@@ -354,6 +396,13 @@ class InteractiveMapWidget:
         """Callback for colorbar slider change event."""
         self.plot_map(self.center_slider.value, self._get_window_timedelta())
         
+    def _on_vrange_change(self, change):
+        """Callback for vertical coordinate slider change event."""
+        window_td = self._get_window_timedelta()
+        self.vrange['min'], self.vrange['max'] = self.vrange_slider.value
+        self._update_colorbar_slider()
+        self.plot_map(self.center_slider.value, window_td)
+
     def clear(self) -> None:
         """Clear the visualization output.
         
@@ -380,6 +429,7 @@ class InteractiveMapWidget:
             self.window_text,
             self.center_slider,
             self.colorbar_slider,
+            self.vrange_slider,
             self.output
         ])
         

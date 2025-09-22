@@ -14,6 +14,7 @@ class MapConfig:
         self,
         colormap: str = 'cividis',
         map_extent: Optional[Tuple[float, float, float, float]] = None,
+        vertical_range: Optional[Tuple[float, float]] = None,
         padding: float = 5.0,
         figure_size: Tuple[int, int] = (10, 12),
         scatter_size: int = 100,
@@ -36,6 +37,12 @@ class MapConfig:
         """
         self.colormap = colormap
         self.map_extent = map_extent
+        self.vrange = None
+        if vertical_range is not None:
+            self.vrange = {}
+            self.vrange['min'] = vertical_range[0]
+            self.vrange['max'] = vertical_range[1]
+
         self.padding = padding
         self.figure_size = figure_size
         self.scatter_size = scatter_size
