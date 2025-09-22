@@ -1,5 +1,6 @@
 """Model-observation comparison workflow for CrocoCamp."""
 
+from datetime import timedelta
 import glob
 import os
 import shutil
@@ -51,7 +52,7 @@ class WorkflowModelObs(workflow.Workflow):
             'parquet_folder'
         ]
     
-    def run(self, trim_obs: bool = False, no_matching: bool = False, 
+    def run(self, trim_obs: bool = True, no_matching: bool = False,
             force_obs_time: bool = False, parquet_only: bool = False,
             clear_output: bool = False) -> int:
         """Execute the complete model-observation workflow.
@@ -300,11 +301,26 @@ class WorkflowModelObs(workflow.Workflow):
                         if obs_in_file in used_obs_in_files:
                             continue
                         
+                        print(f"checking obs_seq.in file {obs_in_file}")
                         obs_in_df = obsq.ObsSequence(obs_in_file)
                         t1 = obs_in_df.df.time.min()
                         t2 = obs_in_df.df.time.max()
+                        print(f"obs_seq in min time: {t1}")
+                        print(f"obs_seq in max time: {t2}")
+                        print(f"snapshot time: {pd.Timestamp(time)}")
+
+                        tw = timedelta(
+                            days=self.config["time_window"]["days"],
+                            seconds=self.config["time_window"]["seconds"],
+                        )
+                        half_tw = tw/2
+                        ts = pd.Timestamp(time)
+                        ts1 = ts-half_tw
+                        ts2 = ts+half_tw
+                        print(f"Validating obs_seq if obs are with in window {tw} centered on {ts}, i.e. between {ts1} and {ts2}.")
                         
-                        if t1 <= pd.Timestamp(time) <= t2:
+                        if (ts1 <= t1 <= ts2) and (ts1 <= t2 <= ts2):
+#                        if t1 <= pd.Timestamp(time) <= t2:
                             used_obs_in_files.append(obs_in_file)
                             tmp_model_in_file = model_in_f + "_tmp_" + str(t_id)
 

@@ -49,6 +49,9 @@ def convert_time_window(config: Dict[str, Any]) -> Dict[str, Any]:
 
     keys = ["years", "months", "weeks", "days", "hours", "minutes", "seconds"]
     time_window_dict = config.get("time_window", None)
+    if time_window_dict is None:
+        raise KeyError("No time window has been specified.")
+
     for key in keys:
         if key not in time_window_dict:
             time_window_dict[key] = 0
@@ -122,6 +125,8 @@ def check_or_create_folder(output_folder: str, name: str) -> None:
 def clear_folder(folder_path: str) -> None:
     """Clear content at folder_path."""
     import shutil  # pylint: disable=import-outside-toplevel
+
+    if not os.path.isdir(folder_path): return
 
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)

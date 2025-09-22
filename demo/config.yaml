@@ -1,8 +1,6 @@
-# Configuration file for CrocoCamp tools
-
-####### DART #######
-# Path to DART's perfect model obs executable
-perfect_model_obs_dir: #/path/to/DART/models/MOM6/work
+# ==========================================
+# CrocoCamp Configuration Example
+# ==========================================
 
 ####### INPUT FILES #######
 # Directory containing model .nc files to process
@@ -22,3 +20,23 @@ output_folder: ./out_obs_seq_in/
 input_nml_bck: ./input_bckp
 trimmed_obs_folder: ./out_trimmed_obs_seq_in
 parquet_folder: ./out_parquet/
+
+####### DART #######
+# Path to DART's perfect model obs executable
+perfect_model_obs_dir: /path/to/DART/models/MOM6/work
+
+# Observation types to assimilate (can include ALL_<FIELD> entries)
+use_these_obs:
+   - ALL_TEMPERATURE           # Includes ALL temperature types
+#  - FLOAT_TEMPERATURE          # Argo float temperature measurements
+#  - FLOAT_SALINITY            # Argo float salinity measurements
+
+# Time window for matching observations to model output
+time_window:
+  days: 999      # Primary time window in days
+  hours: 0     # Additional hours
+  minutes: 0   # Additional minutes
+  seconds: 0   # Additional seconds
+  weeks: 0     # Additional weeks (converted to days)
+  months: 0    # Additional months (converted to days, ~30 days/month)
+  years: 0     # Additional years (converted to days, ~365 days/year)
