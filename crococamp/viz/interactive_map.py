@@ -12,10 +12,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from IPython.display import display, clear_output
 
+from .base import InteractiveWidget
 from .config import MapConfig
 
 
-class InteractiveMapWidget:
+class InteractiveMapWidget(InteractiveWidget):
     """Interactive map widget for visualizing model-observation comparisons.
     
     This widget provides an interactive interface for exploring temporal and spatial
@@ -29,9 +30,12 @@ class InteractiveMapWidget:
             dataframe: Input dataframe (pandas or dask) containing observation data
             config: MapConfig instance for customization (optional)
         """
-        self.df = dataframe
         self.config = config or MapConfig()
-        
+        super().__init__(dataframe, self.config)
+        self._setup_widget_workflow()
+
+    def _initialize_state(self) -> None:
+        """Initialize widget-specific state variables."""
         # Internal state
         self.filtered_df = None
         self.min_time = None
@@ -42,28 +46,10 @@ class InteractiveMapWidget:
         self.plot_title = None
         self.vrange = None
         
-        # Initialize widgets
+        # Initialize map-specific calculations
         self._calculate_vertical_limits()
         self._calculate_map_extent()
-        self._create_widgets()
-        self._setup_callbacks()
 
-    def _is_dask_dataframe(self) -> bool:
-        """Check if the dataframe is a dask DataFrame."""
-        return hasattr(self.df, 'compute')
-        
-    def _compute_if_needed(self, series_or_df: Union[pd.Series, pd.DataFrame, dd.Series, dd.DataFrame]) -> Union[pd.Series, pd.DataFrame]:
-        """Compute dask series/dataframe if needed, otherwise return as-is."""
-        if hasattr(series_or_df, 'compute'):
-            return series_or_df.compute()
-        return series_or_df
-        
-    def _persist_if_needed(self, df: Union[pd.DataFrame, dd.DataFrame]) -> Union[pd.DataFrame, dd.DataFrame]:
-        """Persist dask dataframe if needed, otherwise return as-is."""
-        if hasattr(df, 'persist'):
-            return df.persist()
-        return df
-        
     def _calculate_map_extent(self) -> None:
         """Calculate map extent from data if not provided in config."""
         if self.config.map_extent is not None:
@@ -286,6 +272,12 @@ class InteractiveMapWidget:
             self.colorbar_slider.max = 1
             self.colorbar_slider.value = [0, 1]
             
+    def _plot(self) -> None:
+        """Create the map plot with current settings."""
+        center = self.center_slider.value if hasattr(self, 'center_slider') else None
+        window_td = self._get_window_timedelta() if hasattr(self, 'window_slider') else timedelta(hours=24)
+        self.plot_map(center, window_td)
+        
     def plot_map(self, center: pd.Timestamp, window_td: timedelta) -> None:
         """Plot the reference map showing mean values of plot_var for each location (lat, lon)
         within the selected time window.
@@ -360,6 +352,31 @@ class InteractiveMapWidget:
             plt.legend(loc='upper left', bbox_to_anchor=(0.02, 0.98))
             plt.tight_layout()
             plt.show()
+
+    def _initialize_for_display(self) -> None:
+        """Initialize widget state for display."""
+        # Initial setup
+        self._update_refvar(self.refvar_dropdown.value)
+        self._update_filtered_df(self.type_dropdown.value)
+        self.window_slider.max = max(self.total_hours, 1)
+        self._update_center_slider(self._get_window_timedelta())
+        self._update_colorbar_slider()
+
+    def _create_widget_layout(self) -> widgets.Widget:
+        """Create the widget layout for display."""
+        # Create and display widget layout
+        widget_box = widgets.VBox([
+            self.refvar_dropdown,
+            self.type_dropdown,
+            self.window_slider,
+            self.window_text,
+            self.center_slider,
+            self.colorbar_slider,
+            self.vrange_slider,
+            self.output
+        ])
+        
+        return widget_box
             
     # Callback methods
     def _on_type_change(self, change):
@@ -402,40 +419,3 @@ class InteractiveMapWidget:
         self.vrange['min'], self.vrange['max'] = self.vrange_slider.value
         self._update_colorbar_slider()
         self.plot_map(self.center_slider.value, window_td)
-
-    def clear(self) -> None:
-        """Clear the visualization output.
-        
-        This method clears the current visualization so users can call setup()
-        again with different parameters without having both visualizations displayed.
-        """
-        with self.output:
-            clear_output(wait=True)
-        
-    def setup(self) -> None:
-        """Initialize the widget with default selections and display."""
-        # Initial setup
-        self._update_refvar(self.refvar_dropdown.value)
-        self._update_filtered_df(self.type_dropdown.value)
-        self.window_slider.max = max(self.total_hours, 1)
-        self._update_center_slider(self._get_window_timedelta())
-        self._update_colorbar_slider()
-        
-        # Create and display widget layout
-        widget_box = widgets.VBox([
-            self.refvar_dropdown,
-            self.type_dropdown,
-            self.window_slider,
-            self.window_text,
-            self.center_slider,
-            self.colorbar_slider,
-            self.vrange_slider,
-            self.output
-        ])
-        
-        display(widget_box)
-        
-        # Initial plot
-        self.plot_map(self.center_slider.value, self._get_window_timedelta())
-        
-        return widget_box

@@ -18,7 +18,8 @@ class ProfileConfig:
         marker_alpha: float = 0.7,
         invert_yaxis: bool = True,
         grid: bool = True,
-        disallowed_axes: Optional[List[str]] = None
+        initial_x: Optional[str] = None,
+        initial_y: Optional[str] = None
     ) -> None:
         """Initialize profile configuration.
 
@@ -29,7 +30,8 @@ class ProfileConfig:
             marker_alpha: Alpha transparency of markers
             invert_yaxis: Whether to invert the y-axis (typical for depth profiles)
             grid: Whether to show grid lines
-            disallowed_axes: Column names to exclude from axis selection dropdowns
+            initial_x: Default x-axis column name
+            initial_y: Default y-axis column name
         """
         self.colormap = colormap
         self.figure_size = figure_size
@@ -37,11 +39,8 @@ class ProfileConfig:
         self.marker_alpha = marker_alpha
         self.invert_yaxis = invert_yaxis
         self.grid = grid
-
-        if disallowed_axes is None:
-            self.disallowed_axes = ["time"]
-        else:
-            self.disallowed_axes = disallowed_axes
+        self.initial_x = initial_x
+        self.initial_y = initial_y
 
 
 class MapConfig:

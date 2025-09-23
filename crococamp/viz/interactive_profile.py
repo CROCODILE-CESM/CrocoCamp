@@ -6,12 +6,13 @@ import dask.dataframe as dd
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import pandas as pd
-from IPython.display import display, clear_output
+from IPython.display import clear_output
 
+from .base import InteractiveWidget
 from .config import ProfileConfig
 
 
-class InteractiveProfileWidget:
+class InteractiveProfileWidget(InteractiveWidget):
     """Interactive 2D profile widget for visualizing model-observation comparisons.
 
     This widget provides an interactive interface for creating 2D scatter plots
@@ -36,43 +37,23 @@ class InteractiveProfileWidget:
                else second numeric column)
             config: ProfileConfig instance for customization (optional)
         """
-        self.df = dataframe
         self.config = config or ProfileConfig()
 
-        # Set default axes
-        self.x_column = x
-        self.y_column = y
+        # Set initial axes from parameters or config
+        self.x_column = x or self.config.initial_x
+        self.y_column = y or self.config.initial_y
 
+        super().__init__(dataframe, self.config)
+        self._setup_widget_workflow()
+
+    def _initialize_state(self) -> None:
+        """Initialize widget-specific state variables."""
         # Internal state
         self.filtered_df = None
         self.plot_title = ""
 
         # Initialize default axes if not provided
         self._set_default_axes()
-
-        # Initialize widgets
-        self._create_widgets()
-        self._setup_callbacks()
-
-    def _is_dask_dataframe(self) -> bool:
-        """Check if the dataframe is a dask DataFrame."""
-        return hasattr(self.df, 'compute')
-
-    def _compute_if_needed(
-        self, series_or_df: Union[pd.Series, pd.DataFrame, dd.Series, dd.DataFrame]
-    ) -> Union[pd.Series, pd.DataFrame]:
-        """Compute dask series/dataframe if needed, otherwise return as-is."""
-        if hasattr(series_or_df, 'compute'):
-            return series_or_df.compute()
-        return series_or_df
-
-    def _persist_if_needed(
-        self, df: Union[pd.DataFrame, dd.DataFrame]
-    ) -> Union[pd.DataFrame, dd.DataFrame]:
-        """Persist dask dataframe if needed, otherwise return as-is."""
-        if hasattr(df, 'persist'):
-            return df.persist()
-        return df
 
     def _set_default_axes(self) -> None:
         """Set default axes if not provided by user."""
@@ -83,9 +64,9 @@ class InteractiveProfileWidget:
             if 'obs' in columns:
                 self.x_column = 'obs'
             else:
-                # Find first numeric column that's not disallowed
+                # Find first column that's not time
                 for col in columns:
-                    if col not in self.config.disallowed_axes:
+                    if col != 'time':
                         self.x_column = col
                         break
                 if self.x_column is None and columns:
@@ -96,10 +77,9 @@ class InteractiveProfileWidget:
             if 'vertical' in columns:
                 self.y_column = 'vertical'
             else:
-                # Find second numeric column that's not disallowed and different from x
+                # Find second column that's not time and different from x
                 for col in columns:
-                    if (col not in self.config.disallowed_axes and
-                            col != self.x_column):
+                    if col not in ('time', self.x_column):
                         self.y_column = col
                         break
                 if self.y_column is None and len(columns) > 1:
@@ -112,8 +92,7 @@ class InteractiveProfileWidget:
         self.output = widgets.Output()
 
         # X-axis dropdown
-        axis_options = [col for col in self.df.columns.tolist()
-                        if col not in self.config.disallowed_axes]
+        axis_options = [col for col in self.df.columns.tolist() if col != 'time']
         self.x_dropdown = widgets.Dropdown(
             options=axis_options,
             value=self.x_column if self.x_column in axis_options else axis_options[0],
@@ -178,7 +157,7 @@ class InteractiveProfileWidget:
         y_axis = self.y_dropdown.value
         self.plot_title = f"{y_axis} vs {x_axis} ({type_str})"
 
-    def plot_profile(self) -> None:
+    def _plot(self) -> None:
         """Create the 2D scatter plot."""
         with self.output:
             clear_output(wait=True)
@@ -251,25 +230,16 @@ class InteractiveProfileWidget:
         """Callback for axis dropdown change events."""
         # Suppress unused argument warning - required by ipywidgets interface
         _ = change
-        self.plot_profile()
+        self._plot()
 
     def _on_type_change(self, change):
         """Callback for type selector change events."""
         # Suppress unused argument warning - required by ipywidgets interface
         _ = change
-        self.plot_profile()
+        self._plot()
 
-    def clear(self) -> None:
-        """Clear the visualization output.
-
-        This method clears the current visualization so users can call setup()
-        again with different parameters without having both visualizations displayed.
-        """
-        with self.output:
-            clear_output(wait=True)
-
-    def setup(self) -> None:
-        """Initialize the widget with default selections and display."""
+    def _initialize_for_display(self) -> None:
+        """Initialize widget state for display."""
         # Get initial selected types
         if hasattr(self.type_selector, 'value'):
             selected_types = list(self.type_selector.value)
@@ -278,6 +248,8 @@ class InteractiveProfileWidget:
 
         self._update_filtered_df(selected_types)
 
+    def _create_widget_layout(self) -> widgets.Widget:
+        """Create the widget layout for display."""
         # Create widget layout
         controls = [self.x_dropdown, self.y_dropdown]
         if hasattr(self.type_selector, 'observe'):  # Only add if it's a real selector
@@ -288,9 +260,9 @@ class InteractiveProfileWidget:
             self.output
         ])
 
-        display(widget_box)
-
-        # Initial plot
-        self.plot_profile()
-
         return widget_box
+
+    # Legacy method names for backward compatibility
+    def plot_profile(self) -> None:
+        """Legacy method name for _plot()."""
+        self._plot()
