@@ -172,33 +172,35 @@ class InteractiveProfileWidget(InteractiveWidget):
             else:
                 selected_types = []
 
-            self._update_filtered_df(selected_types)
-
             # Get the data for plotting
             x_col = self.x_dropdown.value
             y_col = self.y_dropdown.value
-
-            plot_df = self._compute_if_needed(
-                self.filtered_df[[x_col, y_col]].dropna()
-            )
-
-            if plot_df.empty:
-                print("No valid data points for selected axes and types.")
-                return
 
             # Create the plot
             plt.figure(figsize=self.config.figure_size)
             ax = plt.gca()
 
-            ax.scatter(
-                plot_df[x_col],
-                plot_df[y_col],
-                s=self.config.marker_size,
-                alpha=self.config.marker_alpha,
-                c=range(len(plot_df)),  # Color by index for visual appeal
-                cmap=self.config.colormap,
-                edgecolors='none'
-            )
+            for obs_type in selected_types:
+
+                self._update_filtered_df([obs_type])
+
+                plot_df = self._compute_if_needed(
+                    self.filtered_df[[x_col, y_col]]
+                )
+
+                if plot_df.empty:
+                    print("No valid data points for selected axes and types.")
+                    return
+
+                ax.plot(
+                    plot_df[x_col],
+                    plot_df[y_col],
+                    marker='o',
+                    linestyle='None',
+                    label=obs_type
+                )
+
+            ax.legend()
 
             # Configure axes
             ax.set_xlabel(x_col, fontsize=12)
