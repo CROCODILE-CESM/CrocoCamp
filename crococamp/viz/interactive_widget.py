@@ -92,7 +92,7 @@ class InteractiveWidget(ABC):
 
         # Create and display widget layout
         widget_box = self._create_widget_layout()
-        display(widget_box)
+        #display(widget_box)
 
         # Initial plot
         self._plot()
