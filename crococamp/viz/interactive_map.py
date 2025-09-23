@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from IPython.display import display, clear_output
 
-from .base import InteractiveWidget
+from .interactive_widget import InteractiveWidget
 from .config import MapConfig
 
 
@@ -353,7 +353,7 @@ class InteractiveMapWidget(InteractiveWidget):
             plt.tight_layout()
             plt.show()
 
-    def _initialize_for_display(self) -> None:
+    def _initialize_widget(self) -> None:
         """Initialize widget state for display."""
         # Initial setup
         self._update_refvar(self.refvar_dropdown.value)

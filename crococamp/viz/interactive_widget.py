@@ -29,8 +29,6 @@ class InteractiveWidget(ABC):
         self.config = config
         self.output = None
 
-        # Subclasses should call this workflow in their __init__
-
     def _setup_widget_workflow(self):
         """Execute the standard widget setup workflow."""
         self._initialize_state()
@@ -90,7 +88,7 @@ class InteractiveWidget(ABC):
             The widget box containing all controls and output
         """
         # Initialize with defaults
-        self._initialize_for_display()
+        self._initialize_widget()
 
         # Create and display widget layout
         widget_box = self._create_widget_layout()
@@ -102,7 +100,7 @@ class InteractiveWidget(ABC):
         return widget_box
 
     @abstractmethod
-    def _initialize_for_display(self) -> None:
+    def _initialize_widget(self) -> None:
         """Initialize widget state for display."""
 
     @abstractmethod
