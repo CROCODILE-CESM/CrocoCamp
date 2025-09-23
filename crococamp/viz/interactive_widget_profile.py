@@ -12,7 +12,7 @@ from .interactive_widget import InteractiveWidget
 from .config import ProfileConfig
 
 
-class InteractiveProfileWidget(InteractiveWidget):
+class InteractiveWidgetProfile(InteractiveWidget):
     """Interactive 2D profile widget for visualizing model-observation comparisons.
 
     This widget provides an interactive interface for creating 2D scatter plots

@@ -6,7 +6,7 @@ model-observation comparisons with support for both dask and pandas DataFrames.
 
 from .interactive_widget import InteractiveWidget
 from .config import MapConfig, ProfileConfig
-from .interactive_map import InteractiveMapWidget
-from .interactive_profile import InteractiveProfileWidget
+from .interactive_widget_map import InteractiveWidgetMap
+from .interactive_widget_profile import InteractiveWidgetProfile
 
-__all__ = ['InteractiveWidget', 'InteractiveMapWidget', 'InteractiveProfileWidget', 'MapConfig', 'ProfileConfig']
+__all__ = ['InteractiveWidget', 'InteractiveWidgetMap', 'InteractiveWidgetProfile', 'MapConfig', 'ProfileConfig']

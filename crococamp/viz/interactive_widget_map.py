@@ -16,7 +16,7 @@ from .interactive_widget import InteractiveWidget
 from .config import MapConfig
 
 
-class InteractiveMapWidget(InteractiveWidget):
+class InteractiveWidgetMap(InteractiveWidget):
     """Interactive map widget for visualizing model-observation comparisons.
     
     This widget provides an interactive interface for exploring temporal and spatial
