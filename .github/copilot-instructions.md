@@ -39,6 +39,8 @@ Longer term, tools for **binning and averaging data prior to interpolation** int
   - Use CamelCase for classes, snake_case for functions/variables.
   - Keep the public API minimal and clean.
   - Keep in mind that this code is used by non-experienced Python users too, so any design solution that is advanced should be justified and well documented and/or commented.
+  - Modules containing classes should have their name match the class name, e.g. the class `InteractiveWidget` is defined in `interactive_widget.py`, the subclass `InteractiveWidgetProfile` is in `interactive_widget_profile.py`
+  - Whenever possible, a subclass name should add from the parent class, making inheritance clear. For example, `InteractiveWidgetProfile` inherits from `InteractiveWidget`. Alternatives like `InteractiveProfileWidget` or `InteractiveProfile` are discouraged.
 
 - **Dependencies:**  
   - Use only those listed in `pyproject.toml`.
