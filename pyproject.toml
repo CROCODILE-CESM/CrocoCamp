@@ -13,6 +13,7 @@ dependencies = [
     "ipykernel",
     "ipywidgets",
     "matplotlib",
+    "netcdf4",
     "pandas",
     "pyarrow",
     "pyyaml",
