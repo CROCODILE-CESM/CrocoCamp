@@ -9,6 +9,7 @@ import yaml
 
 def resolve_path(path: str, config_file: str) -> str:
     """Resolve path to absolute, using config_file location as base for relative paths."""
+    path = os.path.expandvars(path)
     if os.path.isabs(path):
         return path
     config_dir = os.path.dirname(os.path.abspath(config_file))
