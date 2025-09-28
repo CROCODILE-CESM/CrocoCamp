@@ -12,6 +12,7 @@ dependencies:
   - netcdf4
   - pandas
   - pyarrow
+  - pyproj
   - pyyaml
   - scipy
   - shapely

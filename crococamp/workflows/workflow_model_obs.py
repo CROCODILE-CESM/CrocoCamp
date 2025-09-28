@@ -548,5 +548,6 @@ class WorkflowModelObs(workflow.Workflow):
             append=append,
             name_function=name_function,
             write_metadata_file=True,
-            ignore_divisions=True
+            ignore_divisions=True,
+            write_index=False
         )
