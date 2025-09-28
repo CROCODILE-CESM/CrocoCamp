@@ -15,7 +15,7 @@ dependencies:
   - pyyaml
   - scipy
   - shapely
-  - xarray
+  - xarray<=2025.07
   - pip
   - pip:
       - -e .
