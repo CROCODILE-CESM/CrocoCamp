@@ -24,10 +24,9 @@ def read_config(config_file: str) -> Dict[str, Any]:
         with open(config_file, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
         for key in config:
-            if isinstance(config[key], str):
+            if isinstance(config[key], str) and key != "layer_name":
                 config[key] = resolve_path(config[key], config_file)
 
-        config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
         config = convert_time_window(config)
         return config
     except yaml.YAMLError as e:

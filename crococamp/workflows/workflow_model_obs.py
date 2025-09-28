@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 import glob
+from importlib.resources import files
 import os
 import shutil
 import subprocess
@@ -37,7 +38,7 @@ class WorkflowModelObs(workflow.Workflow):
         """
 
         super().__init__(config)
-
+        self.input_nml_template = files('crococamp.utils').joinpath('input_template.nml')
 
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys."""
@@ -239,7 +240,7 @@ class WorkflowModelObs(workflow.Workflow):
     
     def _initialize_model_namelist(self) -> None:
         """Initialize model namelist parameters."""
-        self._namelist = namelist.Namelist(self.config['input_nml'])
+        self._namelist = namelist.Namelist(self.input_nml_template)
 
         self._namelist.update_namelist_param(
             "model_nml", "assimilation_period_days", self.config['time_window']['days'], string=False
@@ -247,16 +248,14 @@ class WorkflowModelObs(workflow.Workflow):
         self._namelist.update_namelist_param(
             "model_nml", "assimilation_period_seconds", self.config['time_window']['seconds'], string=False
         )
-        self._namelist.update_namelist_param(
-            "model_nml", "template_file", self.config['template_file']
-        )
-        self._namelist.update_namelist_param(
-            "model_nml", "static_file", self.config['static_file']
-        )
-        self._namelist.update_namelist_param(
-            "model_nml", "ocean_geometry", self.config['ocean_geometry']
-        )
-        
+
+        common_model_keys = ['template_file','static_file','ocean_geometry','model_state_variables','layer_name']
+        for key in self.config.keys():
+            if key in common_model_keys:
+                self._namelist.update_namelist_param(
+                    "model_nml", key, self.config[key]
+                )
+
         # Update observation types if specified in config
         if 'use_these_obs' in self.config:
             print("Processing observation types from config...")
@@ -345,7 +344,7 @@ class WorkflowModelObs(workflow.Workflow):
                             # Remove temporary file if it was created
                             if snapshots_nb > 1:
                                 os.remove(tmp_model_in_file)
-                            
+
                             counter += 1
                             break
         
@@ -422,12 +421,12 @@ class WorkflowModelObs(workflow.Workflow):
             )
 
         # Write updated namelist
-        self._namelist.write_namelist()
         input_nml_bck_path = os.path.join(
             self.config['input_nml_bck'], 
             f"input.nml_{file_number}.backup"
         )
         self._namelist.write_namelist(input_nml_bck_path)
+        self._namelist.symlink_to_namelist(input_nml_bck_path)
         print("input.nml modified.")
         print()
 
