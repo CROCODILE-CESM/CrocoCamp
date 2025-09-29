@@ -7,14 +7,27 @@ import tempfile
 from typing import Any, Dict, List, Union
 
 class Namelist():
-    """Class to handle file operations related to perfect_model_obs input.nml
-    namelist file.
+    """Class to handle file operations related to perfect_model_obs input.nml namelist file.
 
-    It includes methods to read, write, and update parameters, as well as
-    generating necessary symlink for perfect_model_obs to execute correctly.
+    DART (Data Assimilation Research Testbed) uses Fortran namelist files to configure
+    its behavior. This class provides a Python interface to read, modify, and write
+    these namelist files, which is essential for automated workflows.
     
-    The update_namelist_param method supports both single-value parameters and
-    multi-line block parameters (from dict or list inputs).
+    The class handles:
+    - Reading and parsing Fortran namelist syntax
+    - Updating parameters while preserving file structure and comments
+    - Creating symbolic links required by DART executables
+    - Supporting both single-value and multi-line block parameters
+    
+    For oceanography students: Namelist files are a common way to configure
+    Fortran programs like DART. They use a specific syntax with sections
+    (marked by &section_name) and parameter assignments.
+    
+    Example namelist syntax:
+        &model_nml
+           template_file = 'template.nc'
+           static_file = 'static.nc'
+        /
     """
 
     def __init__(self, namelist_path: str) -> None:

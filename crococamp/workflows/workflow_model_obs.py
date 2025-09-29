@@ -58,15 +58,30 @@ class WorkflowModelObs(workflow.Workflow):
             clear_output: bool = False) -> int:
         """Execute the complete model-observation workflow.
         
+        This method orchestrates the entire process of comparing ocean model outputs
+        with observation data, from initial validation through final parquet generation.
+        
         Args:
-            trim_obs: Whether to trim obs_seq.in files to model grid boundaries
+            trim_obs: Whether to trim obs_seq.in files to model grid boundaries.
+                     Useful for removing observations outside the model domain,
+                     which can improve processing efficiency and accuracy.
             no_matching: Whether to skip time-matching and assume 1:1 correspondence
-            force_obs_time: Whether to assign observations reference time to model files
-            parquet_only: Whether to skip building perfect obs and directly convert to parquet
-            clear_output: Whether to clear output folder before running the workflow (default: False)
-            
+                        between model and observation files when sorted alphabetically.
+                        Use this option when files are already properly paired.
+            force_obs_time: Whether to assign observations reference time to model files.
+                           This can help with temporal alignment issues.
+            parquet_only: Whether to skip building perfect obs and directly convert 
+                         existing outputs to parquet format. Useful for reprocessing
+                         existing perfect_model_obs results.
+            clear_output: Whether to clear existing output directories before processing.
+                         Use with caution as this will delete previous results.
+                         
         Returns:
-            Number of files processed
+            Number of file pairs successfully processed
+            
+        Raises:
+            ValueError: If required configuration parameters are missing
+            FileNotFoundError: If input directories or files don't exist
         """
         files_processed = 0
 

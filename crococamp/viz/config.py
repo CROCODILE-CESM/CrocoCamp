@@ -46,7 +46,7 @@ class ProfileConfig:
 class MapConfig:
     """Configuration for interactive map visualization.
 
-    Provides default settings for the InteractiveMapWidget with options for customization.
+    Provides default settings for the InteractiveWidgetMap with options for customization.
     All parameters can be overridden during initialization.
     """
 
