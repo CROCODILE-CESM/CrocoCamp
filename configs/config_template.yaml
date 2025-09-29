@@ -28,8 +28,8 @@ perfect_model_obs_dir: /pat/to/DART/model/MOM6/work/
 # Observation types to assimilate (can include ALL_<FIELD> entries)
 use_these_obs:
    - ALL_TEMPERATURE           # Includes ALL temperature types
-#  - FLOAT_TEMPERATURE          # Argo float temperature measurements
-#  - FLOAT_SALINITY            # Argo float salinity measurements
+#  - FLOAT_TEMPERATURE          # Include float temperature measurements
+#  - FLOAT_SALINITY            # Include float salinity measurements
 
 # Time window for matching observations to model output
 time_window:
