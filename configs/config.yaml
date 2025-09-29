@@ -1,40 +1,55 @@
 # ==========================================
 # CrocoCamp Configuration Example
 # ==========================================
+# 
+# This is a working example configuration for CrocoCamp workflows.
+# For comprehensive documentation of all parameters, see config_template.yaml
 
 ####### INPUT FILES #######
 # Input directory containing model .nc files to process
+# Should contain time-series NetCDF files from your ocean model
 model_files_folder: /path/to/model/files/
 
 # Model configuration files (must be .nc files)
+# Essential files defining model grid structure and properties
 template_file: /path/to/model/files/template.nc
 static_file: /path/to/model/files/mom6.h.static.nc
 ocean_geometry: /path/to/model/files/mom6.h.ocean_geometry.nc
 
 # Directory containing observation files (obs_seq.in format)
+# Should contain DART observation sequence files
 obs_seq_in_folder: /path/to/obs_seq_files/
 
 ####### OUTPUT FILES #######
 # Output directories (will be created if they don't exist)
+# Main output folder for processed obs_seq.out files
 output_folder: /path/to/output/
+
+# Backup folder for DART input.nml files
 input_nml_bck: /path/to/backups/
+
+# Folder for observations trimmed to model grid boundaries (when using --trim)
 trimmed_obs_folder: /path/to/trimmed_obs/
+
+# Final output folder for analysis-ready parquet files
 parquet_folder: /path/to/parquet_output/
 
 ####### DART #######
-# Path to DART's perfect model obs executable
+# Path to DART's perfect model obs executable directory
 perfect_model_obs_dir: /path/to/DART/models/MOM6/work
 
-# Observation types to assimilate (can include ALL_<FIELD> entries)
+# Observation types to include in analysis
+# Can specify individual types or use ALL_<FIELD> for automatic expansion
 use_these_obs:
   - FLOAT_TEMPERATURE          # Argo float temperature measurements
   - FLOAT_SALINITY            # Argo float salinity measurements
   - CTD_TEMPERATURE           # CTD temperature profiles
   - CTD_SALINITY             # CTD salinity profiles
-  # - ALL_TEMPERATURE           # Includes ALL temperature types
+  # - ALL_TEMPERATURE           # Includes ALL temperature types (alternative approach)
   - SATELLITE_SSH             # Sea surface height from satellites
 
 # Time window for matching observations to model output
+# Controls temporal tolerance for obs-model pairing
 time_window:
   days: 1      # Primary time window in days
   hours: 0     # Additional hours

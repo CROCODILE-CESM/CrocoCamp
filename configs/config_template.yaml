@@ -1,42 +1,71 @@
 # ==========================================
-# CrocoCamp Configuration Example
+# CrocoCamp Configuration Template
 # ==========================================
+# 
+# This template file provides comprehensive configuration options for CrocoCamp workflows.
+# It includes detailed explanations for each parameter to help oceanography students
+# understand the purpose and usage of each setting.
+#
+# Usage: Copy this file to create your own configuration, then modify paths and
+# parameters according to your specific data and analysis requirements.
 
 ####### INPUT FILES #######
-# Directory containing model .nc files to process
+# Input directory containing model .nc files to process
+# This should contain time-series NetCDF files from your ocean model (e.g., MOM6)
 model_files_folder: /path/to/model_files/
 
 # Model configuration files (must be .nc files)
-template_file: /path/to/templat_file
-static_file: /path/to/static_file
-ocean_geometry:  /path/to/ocean_geometry
+# These files define the model grid structure and properties:
+# - template_file: Contains model variable definitions and metadata
+# - static_file: Contains time-independent model fields 
+# - ocean_geometry: Contains grid geometry (lat/lon coordinates, cell areas, etc.)
+template_file: /path/to/template_file.nc
+static_file: /path/to/static_file.nc
+ocean_geometry: /path/to/ocean_geometry.nc
 
 # Directory containing observation files
+# This should contain DART obs_seq.in format files with observation data
 obs_seq_in_folder: /path/to/obs/
 
 ####### OUTPUT FILES #######
-# Output directories for processed files (will be created if it doesn't exist)
+# Output directories for processed files (will be created if they don't exist)
+# These directories will store the various outputs from the workflow:
+
+# Main output directory for obs_seq.out files (model data interpolated to obs locations)
 output_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/out_obs_seq_in/
+
+# Backup directory for DART input.nml configuration files  
 input_nml_bck: $WORK/2025-Crocodile-Workshop/tutorial_1/input_bckp/
+
+# Directory for observation files trimmed to model grid boundaries (if --trim option used)
 trimmed_obs_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/out_trimmed_obs_seq_in/
-parquet_folder: .$WORK/2025-Crocodile-Workshop/tutorial_1/out_parquet/
+
+# Directory for final parquet files containing merged model-observation comparisons
+# This is where the analysis-ready data will be stored for visualization
+parquet_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/out_parquet/
 
 ####### DART #######
 # Path to DART's perfect model obs executable
-perfect_model_obs_dir: /pat/to/DART/model/MOM6/work/
+# This should point to the compiled DART MOM6 work directory
+perfect_model_obs_dir: /path/to/DART/models/MOM6/work/
 
 # Observation types to assimilate (can include ALL_<FIELD> entries)
+# These define which observation types to include in the analysis:
+# - Individual types: specific observation platforms/instruments
+# - ALL_<FIELD>: automatic expansion to include all obs types for a quantity
 use_these_obs:
-   - ALL_TEMPERATURE           # Includes ALL temperature types
+   - ALL_TEMPERATURE           # Includes ALL temperature types (FLOAT_TEMPERATURE, CTD_TEMPERATURE, etc.)
 #  - FLOAT_TEMPERATURE          # Argo float temperature measurements
 #  - FLOAT_SALINITY            # Argo float salinity measurements
 
 # Time window for matching observations to model output
+# This defines the temporal tolerance for pairing observations with model data
+# Larger windows allow more observations to be matched but may reduce temporal accuracy
 time_window:
-  days: 999      # Primary time window in days
-  hours: 0     # Additional hours
-  minutes: 0   # Additional minutes
-  seconds: 0   # Additional seconds
-  weeks: 0     # Additional weeks
-  months: 0    # Additional months (30 days/month)
-  years: 0     # Additional years (365 days/year)
+  days: 999      # Primary time window in days (999 = very large window for testing)
+  hours: 0       # Additional hours to add to the time window
+  minutes: 0     # Additional minutes to add to the time window
+  seconds: 0     # Additional seconds to add to the time window
+  weeks: 0       # Additional weeks (converted to days automatically)
+  months: 0      # Additional months (converted to days, ~30 days/month)
+  years: 0       # Additional years (converted to days, ~365 days/year)

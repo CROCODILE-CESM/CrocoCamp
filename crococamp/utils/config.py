@@ -8,7 +8,23 @@ import yaml
 
 
 def resolve_path(path: str, config_file: str) -> str:
-    """Resolve path to absolute, using config_file location as base for relative paths."""
+    """Resolve path to absolute, using config_file location as base for relative paths.
+    
+    This function handles both absolute and relative paths, and expands environment
+    variables (like $WORK) commonly used in HPC environments. For relative paths,
+    it resolves them relative to the configuration file's directory.
+    
+    Args:
+        path: The path to resolve (can contain environment variables)
+        config_file: Path to the configuration file (used as base for relative paths)
+        
+    Returns:
+        Absolute path with environment variables expanded
+        
+    Example:
+        >>> resolve_path("$WORK/data", "/home/user/config.yaml")
+        "/glade/work/username/data"  # (assuming $WORK = "/glade/work/username")
+    """
     path = os.path.expandvars(path)
     if os.path.isabs(path):
         return path
@@ -17,7 +33,27 @@ def resolve_path(path: str, config_file: str) -> str:
 
 
 def read_config(config_file: str) -> Dict[str, Any]:
-    """Read configuration from YAML file."""
+    """Read configuration from YAML file.
+    
+    This function loads a YAML configuration file, resolves all file paths to absolute paths,
+    sets up required derived paths (like input.nml), and processes time window specifications.
+    This is the main entry point for loading CrocoCamp configuration.
+    
+    Args:
+        config_file: Path to the YAML configuration file
+        
+    Returns:
+        Dictionary containing the loaded and processed configuration
+        
+    Raises:
+        FileNotFoundError: If the configuration file doesn't exist
+        ValueError: If the YAML file contains syntax errors or invalid time specifications
+        
+    Example:
+        >>> config = read_config("config.yaml")
+        >>> print(config['model_files_folder'])
+        "/absolute/path/to/model/files"
+    """
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"Config file '{config_file}' does not exist")
 
