@@ -197,7 +197,9 @@ class InteractiveWidgetProfile(InteractiveWidget):
                     plot_df[y_col],
                     marker='o',
                     linestyle='None',
-                    label=obs_type
+                    label=obs_type,
+                    markersize = self.config.marker_size,
+                    alpha = self.config.marker_alpha
                 )
 
             ax.legend()
