@@ -5,7 +5,6 @@
 ####### INPUT FILES #######
 # Directory containing model .nc files to process
 model_files_folder: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6/
-#model_files_folder: /glade/u/home/emilanese/work/CrocoCamp-fork/data/in_mom6/
 
 # Model configuration files (must be .nc files)
 template_file: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6/NWA12_demo_01.nc
