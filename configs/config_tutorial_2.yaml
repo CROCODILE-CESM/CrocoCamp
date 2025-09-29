@@ -1,24 +1,6 @@
-# Configuration file for CrocoCamp tools
-
-####### DART #######
-# Path to DART's perfect model obs executable
-# perfect_model_obs_dir: /glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work
-perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Casper/models/MOM6/work
-
-# Time window for matching observations to model output
-time_window:
-  days: 5      # Primary time window in days
-  hours: 0     # Additional hours
-  minutes: 0   # Additional minutes
-  seconds: 0   # Additional seconds
-  weeks: 0     # Additional weeks (converted to days)
-  months: 0    # Additional months (converted to days, ~30 days/month)
-  years: 0     # Additional years (converted to days, ~365 days/year)
-
-# Observation types to assimilate (can include ALL_<FIELD> entries)
-use_these_obs:
-  - ALL_TEMPERATURE
-  - ALL_SALINITY
+# ==========================================
+# CrocoCamp Configuration Example
+# ==========================================
 
 ####### INPUT FILES #######
 # Directory containing model .nc files to process
@@ -30,12 +12,8 @@ template_file: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutoria
 static_file: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6_ref/NWA12_demo_static.nc
 ocean_geometry:  /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6_ref/NWA12_demo_ocean_geometry.nc
 
-# template_file: /glade/u/home/emilanese/work/CrocoCamp-fork/data/in_mom6/NWA12-2010-05-01.nc
-# static_file: /glade/u/home/emilanese/work/CrocoCamp-fork/data/in_mom6_ref/NWA12-static.nc
-# ocean_geometry:  /glade/u/home/emilanese/work/CrocoCamp-fork/data/in_mom6_ref/NWA12-ocean_geometry.nc
-
 # Directory containing observation files
-obs_seq_in_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/
+obs_seq_in_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/in_CL/
 
 ####### OUTPUT FILES #######
 # Output directory for processed files (will be created if it doesn't exist)
@@ -43,3 +21,23 @@ output_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/output/out_obs_seq_in/
 input_nml_bck: $WORK/2025-Crocodile-Workshop/tutorial_2/output/input_bckp
 trimmed_obs_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/trimmed_obs_seq_in
 parquet_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/out_parquet/
+
+####### DART #######
+# Path to DART's perfect model obs executable
+# perfect_model_obs_dir: /glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work
+perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Casper/models/MOM6/work
+
+# Observation types to assimilate (can include ALL_<FIELD> entries)
+use_these_obs:
+  - ALL_TEMPERATURE
+  - ALL_SALINITY
+
+# Time window for matching observations to model output
+time_window:
+  days: 5      # Primary time window in days
+  hours: 0     # Additional hours
+  minutes: 0   # Additional minutes
+  seconds: 0   # Additional seconds
+  weeks: 0     # Additional weeks
+  months: 0    # Additional months (30 days/month)
+  years: 0     # Additional years (365 days/year)

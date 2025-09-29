@@ -40,8 +40,8 @@ time_window:
   minutes: 0   # Additional minutes
   seconds: 0   # Additional seconds
   weeks: 0     # Additional weeks
-  months: 0    # Additional months (=30 days/month)
-  years: 0     # Additional years (=365 days/year)
+  months: 0    # Additional months (30 days/month)
+  years: 0     # Additional years (365 days/year)
 
 # MOM6 variable naming and type
 model_state_variables:
