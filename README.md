@@ -275,13 +275,14 @@ The best way to learn CrocoCamp is through the hands-on tutorials in the `tutori
 
 **Tutorial 1** (`tutorial1_MOM6-CL-comparison.ipynb`): 
 - Setting up a basic model-observation comparison workflow
-- Using MOM6 ocean model output and World Ocean Database observations
+- Using MOM6 ocean model output and CrocoLake observations
 - Visualizing results with the interactive map widget
 
 **Tutorial 2** (`tutorial2_MOM6-CL-comparison-float.ipynb`):
 - Generating custom observation files from CrocoLake 
 - Analyzing single Argo float profiles
 - Using the interactive profile widget for vertical profile comparisons
+- Passing custom configurations to profile and map widgets
 
 These tutorials demonstrate:
 - Loading and configuring workflows with `WorkflowModelObs`
