@@ -33,20 +33,24 @@ The toolkit is organized into logical modules:
 
 **`WorkflowModelObs`** - Main workflow class for model-observation comparisons
 - `from_config_file(config_file)` - Create workflow from YAML configuration file
-- `run(trim_obs=True, clear_output=False)` - Execute complete workflow 
-- `process_files(trim_obs=False)` - Process model and observation files
-- `merge_model_obs_to_parquet(trim_obs=True)` - Convert results to parquet format
-- `get_config(key, default=None)` - Get configuration value
+- `run()` - Execute complete workflow 
+- `process_files()` - Process model and observation files
+- `merge_model_obs_to_parquet()` - Convert results to parquet format
+- `get_config(key)` - Get configuration value
 - `set_config(key, value)` - Set configuration value
 - `print_config()` - Print current configuration
 
 ### Visualization Classes
 
+Both widgets below support both pandas and dask DataFrames.
+
 **`InteractiveWidgetMap`** - Interactive map widget for spatial data visualization
 - Constructor: `InteractiveWidgetMap(dataframe, config=None)`
 - `setup()` - Initialize and display the interactive map widget
 - Provides dropdowns for selecting plot variables, observation types, and time filtering
-- Supports both pandas and dask DataFrames
+
+**`MapConfig`** - Configuration class for map widget customization
+- Parameters: `colormap`, `figure_size`, `scatter_size`, `map_extent`, etc.
 
 **`InteractiveWidgetProfile`** - Interactive profile widget for vertical profile analysis  
 - Constructor: `InteractiveWidgetProfile(dataframe, x='obs', y='vertical', config=None)`
@@ -54,11 +58,8 @@ The toolkit is organized into logical modules:
 - Supports custom x and y axis selections for profile analysis
 - Ideal for analyzing Argo float or CTD profile comparisons
 
-**`MapConfig`** - Configuration class for map widget customization
-- Parameters: `colormap`, `figure_size`, `scatter_size`, `map_extent`, etc.
-
 **`ProfileConfig`** - Configuration class for profile widget customization  
-- Parameters: `colormap`, `figure_size`, `marker_size`, `invert_yaxis`, etc.
+- Parameters: `figure_size`, `marker_size`, `invert_yaxis`, etc.
 
 ## Installation
 
@@ -268,7 +269,7 @@ Continuing with existing obs_kind_nml configuration
 
 
 
-## Demo
+## Demo 
 
 ### Quick Start with Demo Data
 
@@ -318,7 +319,9 @@ ocean_geometry: /path/to/ocean_geometry.nc
 - DART tools paths 
 - Pre-compiled `perfect_model_obs` executable locations
 
-These paths may need to be adjusted if running on other systems.
+These paths may need to be adjusted if running on other systems. Note that DART needs to be compiled separately on Derecho and Casper, so we provide two pre-compiled paths for the workshop:
+- Derecho: `/glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work`
+- Casper: `/glade/u/home/emilanese/work/DART-Casper/models/MOM6/work`
 
 ## Examples
 

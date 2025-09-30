@@ -4,6 +4,8 @@
 # This configuration file contains paths and settings for Tutorial 2,
 # which demonstrates model-observation comparison using MOM6 and a single Argo float.
 #
+# See config_template.yaml for more info about each field.
+#
 # NOTE: Paths below are pre-configured for NCAR HPC systems (Casper/Derecho).
 # If running elsewhere, you will need to adjust these paths to your local setup.
 
