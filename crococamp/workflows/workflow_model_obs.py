@@ -204,6 +204,7 @@ class WorkflowModelObs(workflow.Workflow):
         print(f"  static_file: {self.config['static_file']}")
         print(f"  ocean_geometry: {self.config['ocean_geometry']}")
         print(f"  input_nml_bck: {self.config.get('input_nml_bck', 'input.nml.backup')}")
+        print(f"  tmp_folder: {self.config['tmp_folder']}")
         if trim_obs:
             print(f"  trimmed_obs_folder: {self.config.get('trimmed_obs_folder', 'trimmed_obs_seq')}")
     
@@ -219,6 +220,9 @@ class WorkflowModelObs(workflow.Workflow):
 
         print("Validating output_folder...")
         config_utils.check_or_create_folder(self.config['output_folder'], "output_folder")
+
+        print("Validating tmp_folder...")
+        config_utils.check_or_create_folder(self.config['tmp_folder'], "tmp_folder")
 
         if trim_obs:
             print("Validating trimmed_obs_folder...")
@@ -321,7 +325,7 @@ class WorkflowModelObs(workflow.Workflow):
                         if (ts1 <= t1 <= ts2) and (ts1 <= t2 <= ts2):
 #                        if t1 <= pd.Timestamp(time) <= t2:
                             used_obs_in_files.append(obs_in_file)
-                            tmp_model_in_file = model_in_f + "_tmp_" + str(t_id)
+                            tmp_model_in_file = os.path.basename(model_in_f) + "_tmp_" + str(t_id)
                             tmp_model_in_file = self.config['tmp_folder'] + tmp_model_in_file
 
                             if snapshots_nb > 1:
