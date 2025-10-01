@@ -56,7 +56,7 @@ class MapConfig:
         map_extent: Optional[Tuple[float, float, float, float]] = None,
         vertical_range: Optional[Tuple[float, float]] = None,
         padding: float = 5.0,
-        figure_size: Tuple[int, int] = (10, 12),
+        figure_size: Tuple[int, int] = (8, 6),
         scatter_size: int = 100,
         scatter_alpha: float = 0.7,
         default_window_hours: Optional[int] = None,

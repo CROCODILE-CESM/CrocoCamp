@@ -9,6 +9,7 @@ import cartopy.feature as cfeature
 import dask.dataframe as dd
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from IPython.display import display, clear_output
 
@@ -100,6 +101,8 @@ class InteractiveWidgetMap(InteractiveWidget):
             options=type_options,
             value="FLOAT_TEMPERATURE" if "FLOAT_TEMPERATURE" in type_options else type_options[0],
             description="Observation type:",
+            style={'description_width': 'initial'},
+            layout=widgets.Layout(width='85%')
         )
         
         # Select plotted variable
@@ -109,6 +112,8 @@ class InteractiveWidgetMap(InteractiveWidget):
             options=refvar_options,
             value="residual" if "residual" in refvar_options else refvar_options[0],
             description="Plotted variable",
+            style={'description_width': 'initial'},
+            layout=widgets.Layout(width='85%')
         )
         
         # Window sliders for selecting the time window
@@ -119,16 +124,10 @@ class InteractiveWidgetMap(InteractiveWidget):
             step=1,
             description='Window (hrs):',
             style={'description_width': 'initial'},
-            continuous_update=False
+            continuous_update=False,
+            layout=widgets.Layout(width='85%')
         )
-        
-        self.window_text = widgets.Text(
-            value='',
-            description='Override window:',
-            placeholder='e.g. 4 weeks, 3 days, 48 hours',
-            style={'description_width': 'initial'}
-        )
-        
+
         # Center time slider initialization (dummy value to avoid TraitError)
         dummy_time = pd.Timestamp('2000-01-01 00:00:00')
         self.center_slider = widgets.SelectionSlider(
@@ -136,7 +135,8 @@ class InteractiveWidgetMap(InteractiveWidget):
             value=dummy_time,
             description='Center time:',
             style={'description_width': 'initial'},
-            continuous_update=False
+            continuous_update=False,
+            layout=widgets.Layout(width='85%')
         )
         
         # Colorbar slider for map color limits
@@ -147,7 +147,20 @@ class InteractiveWidgetMap(InteractiveWidget):
             step=0.01,
             description='Colorbar limits:',
             style={'description_width': 'initial'},
-            continuous_update=False
+            continuous_update=False,
+            layout=widgets.Layout(width='85%')
+        )
+        self.min_cb = widgets.FloatText(
+            value=self.colorbar_slider.value[0],
+            description='Colorbar min:',
+            style={'description_width': 'initial'},
+            layout=widgets.Layout(width='210px')
+        )
+        self.max_cb = widgets.FloatText(
+            value=self.colorbar_slider.value[1],
+            description='Colorbar max:',
+            style={'description_width': 'initial'},
+            layout=widgets.Layout(width='210px')
         )
         
         # Vertical coordinate slider for selecting the depth range to plot
@@ -158,7 +171,8 @@ class InteractiveWidgetMap(InteractiveWidget):
             step=0.1,
             description='Vertical coordinate range:',
             style={'description_width': 'initial'},
-            continuous_update=False
+            continuous_update=False,
+            layout=widgets.Layout(width='85%')
         )
 
     def _setup_callbacks(self) -> None:
@@ -166,9 +180,10 @@ class InteractiveWidgetMap(InteractiveWidget):
         self.refvar_dropdown.observe(self._on_refvar_change, names='value')
         self.type_dropdown.observe(self._on_type_change, names='value')
         self.window_slider.observe(self._on_window_change, names='value')
-        self.window_text.observe(self._on_window_change, names='value')
         self.center_slider.observe(self._on_center_change, names='value')
         self.colorbar_slider.observe(self._on_colorbar_change, names='value')
+        self.min_cb.observe(self._on_min_cb_change, names='value')
+        self.max_cb.observe(self._on_max_cb_change, names='value')
         self.vrange_slider.observe(self._on_vrange_change, names='value')
         
     def parse_window(self, text: str) -> timedelta:
@@ -196,11 +211,8 @@ class InteractiveWidgetMap(InteractiveWidget):
             
     def _get_window_timedelta(self):
         """Get current window timedelta from text or slider."""
-        td = self.parse_window(self.window_text.value)
-        if td is None:
-            td = timedelta(hours=self.window_slider.value)
-        return td
-        
+        return timedelta(hours=self.window_slider.value)
+
     def _update_refvar(self, selected_var):
         """Update global variable for the plotted variable."""
         self.plot_var = selected_var
@@ -322,8 +334,10 @@ class InteractiveWidgetMap(InteractiveWidget):
                     edgecolors='none',
                     transform=ccrs.PlateCarree()
                 )
-                plt.colorbar(scatter)
+
+                fig.colorbar(scatter, ax=ax, orientation="vertical", fraction=0.046, pad=0.04)
                 ax.set_extent(self.map_extent, crs=ccrs.PlateCarree())
+
             else:
                 ax.set_global()
                 ax.text(
@@ -365,19 +379,29 @@ class InteractiveWidgetMap(InteractiveWidget):
     def _create_widget_layout(self) -> widgets.Widget:
         """Create the widget layout for display."""
         # Create and display widget layout
-        widget_box = widgets.VBox([
+        widgets_list = [
             self.refvar_dropdown,
             self.type_dropdown,
             self.window_slider,
-            self.window_text,
             self.center_slider,
             self.colorbar_slider,
             self.vrange_slider,
-            self.output
-        ])
-        
-        return widget_box
-            
+        ]
+        grid_box = widgets.GridBox(
+            widgets_list,
+            layout=widgets.Layout(grid_template_columns="repeat(2, 500px)")
+        )
+        cb_text_box = widgets.HBox(
+            [self.min_cb, self.max_cb,],
+            layout=widgets.Layout(width='500px')
+        )
+
+        widgets_box = widgets.VBox(
+            [grid_box, cb_text_box, self.output]
+        )
+
+        return widgets_box
+
     # Callback methods
     def _on_type_change(self, change):
         """Callback for type dropdown change event."""
@@ -411,7 +435,20 @@ class InteractiveWidgetMap(InteractiveWidget):
         
     def _on_colorbar_change(self, change):
         """Callback for colorbar slider change event."""
+        min_val, max_val = change['new']
+        if self.min_cb.value != min_val:
+            self.min_cb.value = min_val
+        if self.max_cb.value != max_val:
+            self.max_cb.value = max_val
         self.plot_map(self.center_slider.value, self._get_window_timedelta())
+
+    def _on_min_cb_change(self, change):
+        """Update slider when min_cb changes."""
+        self.colorbar_slider.value = (change['new'], self.colorbar_slider.value[1])
+
+    def _on_max_cb_change(self, change):
+        """Update slider when max_cb changes."""
+        self.colorbar_slider.value = (self.colorbar_slider.value[0], change['new'])
         
     def _on_vrange_change(self, change):
         """Callback for vertical coordinate slider change event."""
