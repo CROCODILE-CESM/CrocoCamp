@@ -322,6 +322,7 @@ class WorkflowModelObs(workflow.Workflow):
 #                        if t1 <= pd.Timestamp(time) <= t2:
                             used_obs_in_files.append(obs_in_file)
                             tmp_model_in_file = model_in_f + "_tmp_" + str(t_id)
+                            tmp_model_in_file = self.config['tmp_folder'] + tmp_model_in_file
 
                             if snapshots_nb > 1:
                                 # Slice out the snapshot into a temporary file

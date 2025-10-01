@@ -23,10 +23,11 @@ obs_seq_in_folder: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tut
 
 ####### OUTPUT FILES #######
 # Output directories for processed files (will be created if it doesn't exist)
-output_folder: $WORK/2025-Crocodile-Workshop/output/tutorial_1/out_obs_seq_in/
-input_nml_bck: $WORK/2025-Crocodile-Workshop/output/tutorial_1/input_bckp/
-trimmed_obs_folder: $WORK/2025-Crocodile-Workshop/output/tutorial_1/out_trimmed_obs_seq_in/
-parquet_folder: $WORK/2025-Crocodile-Workshop/output/tutorial_1/out_parquet/
+output_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/out_obs_seq_in/
+input_nml_bck: $WORK/2025-Crocodile-Workshop/tutorial_1/input_bckp/
+trimmed_obs_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/out_trimmed_obs_seq_in/
+parquet_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/out_parquet/
+tmp_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/tmp/
 
 ####### DART #######
 # Path to DART's perfect model obs executable

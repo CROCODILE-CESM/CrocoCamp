@@ -27,6 +27,7 @@ output_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/output/out_obs_seq_in/
 input_nml_bck: $WORK/2025-Crocodile-Workshop/tutorial_2/output/input_bckp
 trimmed_obs_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/trimmed_obs_seq_in
 parquet_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/out_parquet/
+tmp_folder: $WORK/2025-Crocodile-Workshop/tutorial_2/tmp/
 
 ####### DART #######
 # Path to DART's perfect model obs executable
