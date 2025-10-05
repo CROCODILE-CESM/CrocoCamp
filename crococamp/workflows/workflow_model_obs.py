@@ -6,7 +6,7 @@ from importlib.resources import files
 import os
 import shutil
 import subprocess
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, List, Optional, Dict
 
 import dask.dataframe as dd
 import numpy as np
@@ -39,6 +39,7 @@ class WorkflowModelObs(workflow.Workflow):
 
         super().__init__(config)
         self.input_nml_template = files('crococamp.utils').joinpath('input_template.nml')
+        self.model_obs_df = None
 
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys."""
@@ -68,8 +69,6 @@ class WorkflowModelObs(workflow.Workflow):
         Returns:
             Number of files processed
         """
-        files_processed = 0
-
         if clear_output:
             print("Clearing all output folders...")
             output_folders = [
@@ -94,8 +93,6 @@ class WorkflowModelObs(workflow.Workflow):
         print("Converting obs_seq format to parquet and adding some diagnostics data...")
         self.merge_model_obs_to_parquet(trim_obs)
         print(f"Parquet data saved to: {self.config['parquet_folder']}")
-        
-        return files_processed
 
 
     def process_files(self, trim_obs: bool = False, no_matching: bool = False, 
@@ -106,9 +103,6 @@ class WorkflowModelObs(workflow.Workflow):
             trim_obs: Whether to trim obs_seq.in files to model grid boundaries
             no_matching: Whether to skip time-matching and assume 1:1 correspondence
             force_obs_time: Whether to assign observations reference time to model files
-            
-        Returns:
-            Number of files processed
         """
 
         # Check that perfect_model_obs_dir is set
@@ -151,9 +145,7 @@ class WorkflowModelObs(workflow.Workflow):
 
         # Cleanup
         self._namelist.cleanup_namelist_symlink()
-        
-        return len(model_in_files)
-    
+
     def merge_model_obs_to_parquet(self, trim_obs: bool) -> None:
         """Merge model and observation files to parquet format."""
         output_folder = self.config['output_folder']
@@ -191,6 +183,10 @@ class WorkflowModelObs(workflow.Workflow):
         )
 
         shutil.rmtree(tmp_parquet_folder)
+        self._set_model_obs_df()
+        print(f"Total number of observations in output dataset: {len(self.get_all_data())}")
+        print(f"Succesfull interpolations in output dataset   : {len(self.get_good_data())}")
+        print(f"Failed interpolations in output dataset       : {len(self.get_bad_data())}")
 
     def _print_workflow_config(self, trim_obs: bool) -> None:
         """Print workflow configuration."""
@@ -556,3 +552,47 @@ class WorkflowModelObs(workflow.Workflow):
             ignore_divisions=True,
             write_index=False
         )
+
+    def _set_model_obs_df(self, path: Optional[str] = None) -> None:
+        """Create model_obs_df dask dataframe linked to parquet with model-obs data"""
+        if path is None:
+            path = self.config['parquet_folder']
+        if self.model_obs_df is not None:
+            print("WARNING: model_obs_df not None, replacing it.")
+        self.model_obs_df = dd.read_parquet(path)
+
+    def _get_model_obs_df(self, filters: Optional[str] = None, compute: Optional[bool] = False, path: Optional[str] = None) -> Union[pd.DataFrame, dd.DataFrame]:
+        """Get model_obs_df dataframe, computed or not, takes 'all','good','failed' filters and path"""
+        if self.model_obs_df is None:
+            self._set_model_obs_df(path=path)
+
+        admissible_filters = ['all','good','failed']
+        if filters is None or filters is "all":
+            ddf = self.model_obs_df
+        elif filters is "good":
+            ddf = self.model_obs_df[
+                self.model_obs_df['perfect_model_qc']<=10
+            ]
+        elif filters is "failed":
+            ddf = self.model_obs_df[
+                self.model_obs_df['perfect_model_qc']>10
+            ]
+        else:
+            raise ValueError(f"filters value {filters} not supported, use one of {admissible_filters}.")
+
+        if compute:
+            return ddf.compute()
+        else:
+            return ddf
+
+    def get_all_model_obs_df(self, compute: Optional[bool] = False, path: Optional[str] = None) -> Union[pd.DataFrame, dd.DataFrame]:
+        """Get all rows in model_obs_df"""
+        return self._get_model_obs_df(compute=compute,path=path)
+
+    def get_good_model_obs_df(self, compute: Optional[bool] = False, path: Optional[str] = None) -> Union[pd.DataFrame, dd.DataFrame]:
+        """Get only rows in model_obs_df corresponding to successful interpolations"""
+        return self._get_model_obs_df(filters='good', compute=compute, path=path)
+
+    def get_failed_model_obs_df(self, compute: Optional[bool] = False, path: Optional[str] = None) -> Union[pd.DataFrame, dd.DataFrame]:
+        """Get only rows in model_obs_df corresponding to failed interpolations"""
+        return self._get_model_obs_df(filters='failed', compute=compute, path=path)

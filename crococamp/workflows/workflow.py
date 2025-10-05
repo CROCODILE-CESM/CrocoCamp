@@ -94,3 +94,4 @@ class Workflow(ABC):
         print("Configuration:")
         for key, value in self.config.items():
             print(f"  {key}: {value}")
+
