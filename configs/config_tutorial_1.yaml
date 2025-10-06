@@ -11,15 +11,15 @@
 
 ####### INPUT FILES #######
 # Directory containing model .nc files to process
-model_files_folder: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6/
+model_files_folder: /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6/
 
 # Model configuration files (must be .nc files)
-template_file: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6/NWA12_demo_01.nc
-static_file: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6_ref/NWA12_demo_static.nc
-ocean_geometry:  /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_mom6_ref/NWA12_demo_ocean_geometry.nc
+template_file: /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6/NWA12_demo_01.nc
+static_file: /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6_ref/NWA12_demo_static.nc
+ocean_geometry:  /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6_ref/NWA12_demo_ocean_geometry.nc
 
 # Directory containing observation files
-obs_seq_in_folder: /glade/u/home/emilanese/work/DATA/2025-Crocodile-Workshop/tutorial_1/in_CrocoLake/
+obs_seq_in_folder: /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_CrocoLake/
 
 ####### OUTPUT FILES #######
 # Output directories for processed files (will be created if it doesn't exist)
@@ -31,8 +31,8 @@ tmp_folder: $WORK/2025-Crocodile-Workshop/tutorial_1/tmp/
 
 ####### DART #######
 # Path to DART's perfect model obs executable
-# perfect_model_obs_dir: /glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work
-perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Casper/models/MOM6/work
+# perfect_model_obs_dir: /glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work #DERECHO
+perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Casper/models/MOM6/work  #CASPER
 
 # Observation types to assimilate (can include ALL_<FIELD> entries)
 use_these_obs:
