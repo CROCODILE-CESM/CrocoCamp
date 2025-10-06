@@ -474,7 +474,7 @@ class WorkflowModelObs(workflow.Workflow):
         qc_col = [col for col in perf_obs_out.df.columns.to_list() if col.endswith("_QC")]
         if len(qc_col) > 1:
             raise ValueError("More than one QC column found.")
-        perf_model_col = 'perfect_model'
+        perf_model_col = 'interpolated_model'
         perf_model_col_QC = perf_model_col + "_QC"
         perf_obs_out.df = perf_obs_out.df.rename(
             columns={
