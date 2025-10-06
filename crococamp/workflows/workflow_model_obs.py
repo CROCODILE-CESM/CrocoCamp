@@ -41,6 +41,9 @@ class WorkflowModelObs(workflow.Workflow):
         super().__init__(config)
         self.input_nml_template = files('crococamp.utils').joinpath('input_template.nml')
         self.model_obs_df = None
+        self.perfect_model_obs_log_file = "perfect_model_obs.log"
+        if os.path.isfile(self.perfect_model_obs_log_file):
+            os.remove(self.perfect_model_obs_log_file)
 
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys."""
@@ -435,16 +438,15 @@ class WorkflowModelObs(workflow.Workflow):
         # Call perfect_model_obs
         print("Calling perfect_model_obs...")
         perfect_model_obs = os.path.join(self.config['perfect_model_obs_dir'], "perfect_model_obs")
-        process = subprocess.Popen(
-            [perfect_model_obs],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        # Stream the output line-by-line
-        for line in process.stdout:
-            print(line, end="")
+        perfect_model_obs_log_file = "perfect_model_obs.log"
+        with open(perfect_model_obs_log_file, "a") as logfile: # redirect pmo output to logfile
+            process = subprocess.Popen(
+                [perfect_model_obs],
+                stdout=logfile,
+                stderr=subprocess.STDOUT,  # Combine stderr with stdout
+                text=True
+            )
+            process.wait()
 
         # Wait for the process to finish
         process.wait()
@@ -574,11 +576,11 @@ class WorkflowModelObs(workflow.Workflow):
             ddf = self.model_obs_df
         elif filters == "good":
             ddf = self.model_obs_df[
-                self.model_obs_df['perfect_model_QC']<=2
+                self.model_obs_df['interpolated_model_QC']<=2
             ]
         elif filters == "failed":
             ddf = self.model_obs_df[
-                self.model_obs_df['perfect_model_QC']>2
+                self.model_obs_df['interpolated_model_QC']>2
             ]
         else:
             raise ValueError(f"filters value {filters} not supported, use one of {admissible_filters}.")
