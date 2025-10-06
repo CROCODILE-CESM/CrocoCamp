@@ -6,7 +6,7 @@ from importlib.resources import files
 import os
 import shutil
 import subprocess
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Union
 
 import dask.dataframe as dd
 import numpy as np
@@ -184,9 +184,9 @@ class WorkflowModelObs(workflow.Workflow):
 
         shutil.rmtree(tmp_parquet_folder)
         self._set_model_obs_df()
-        print(f"Total number of observations in output dataset: {len(self.get_all_data())}")
-        print(f"Succesfull interpolations in output dataset   : {len(self.get_good_data())}")
-        print(f"Failed interpolations in output dataset       : {len(self.get_bad_data())}")
+        print(f"Total number of observations in output dataset: {len(self.get_all_model_obs_df())}")
+        print(f"Succesfull interpolations in output dataset   : {len(self.get_good_model_obs_df())}")
+        print(f"Failed interpolations in output dataset       : {len(self.get_failed_model_obs_df())}")
 
     def _print_workflow_config(self, trim_obs: bool) -> None:
         """Print workflow configuration."""
@@ -567,15 +567,15 @@ class WorkflowModelObs(workflow.Workflow):
             self._set_model_obs_df(path=path)
 
         admissible_filters = ['all','good','failed']
-        if filters is None or filters is "all":
+        if filters is None or filters == "all":
             ddf = self.model_obs_df
-        elif filters is "good":
+        elif filters == "good":
             ddf = self.model_obs_df[
-                self.model_obs_df['perfect_model_qc']<=10
+                self.model_obs_df['perfect_model_QC']<=2
             ]
-        elif filters is "failed":
+        elif filters == "failed":
             ddf = self.model_obs_df[
-                self.model_obs_df['perfect_model_qc']>10
+                self.model_obs_df['perfect_model_QC']>2
             ]
         else:
             raise ValueError(f"filters value {filters} not supported, use one of {admissible_filters}.")
