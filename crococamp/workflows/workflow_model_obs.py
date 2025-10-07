@@ -293,8 +293,8 @@ class WorkflowModelObs(workflow.Workflow):
             with xr.open_dataset(model_in_f, decode_times=False) as ds:
                 # Fix calendar as xarray does not read it consistently with ncviews
                 ds['time'].attrs['calendar'] = 'proleptic_gregorian'
-                ds = xr.decode_cf(ds)
-                snapshots_nb = ds.dims['time']
+                ds = xr.decode_cf(ds, decode_timedelta=True)
+                snapshots_nb = ds.sizes['time']
                 print(f"    model has {snapshots_nb} snapshots.")
                 
                 for t_id, time in enumerate(ds['time'].values):

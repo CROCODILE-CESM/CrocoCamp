@@ -266,24 +266,14 @@ class InteractiveWidgetMap(InteractiveWidget):
             (self.filtered_df['time'] >= t0) &
             (self.filtered_df['time'] <= t1)
         ]
-        try:
-            col_min = self._compute_if_needed(df_win[self.plot_var].min())
-            col_max = self._compute_if_needed(df_win[self.plot_var].max())
-            step = (col_max - col_min) / 100. if (col_max - col_min) > 0 else 0.01
-            self.colorbar_slider.min = float(col_min)
-            self.colorbar_slider.max = float(col_max)
-            self.colorbar_slider.step = step
-            q_low = self._compute_if_needed(df_win[self.plot_var].quantile(0.01))
-            q_high = self._compute_if_needed(df_win[self.plot_var].quantile(0.99))
-            self.colorbar_slider.value = [
-                float(q_low),
-                float(q_high)
-            ]
-        except Exception:
-            self.colorbar_slider.min = 0
-            self.colorbar_slider.max = 1
-            self.colorbar_slider.value = [0, 1]
-            
+        col_min = self._compute_if_needed(df_win[self.plot_var].min())
+        col_max = self._compute_if_needed(df_win[self.plot_var].max())
+        step = (col_max - col_min) / 100. if (col_max - col_min) > 0 else 0.01
+        self.colorbar_slider.min = float(col_min)
+        self.colorbar_slider.max = float(col_max)
+        self.colorbar_slider.step = step
+        self.colorbar_slider.value = [float(col_min), float(col_max)]
+
     def _plot(self) -> None:
         """Create the map plot with current settings."""
         center = self.center_slider.value if hasattr(self, 'center_slider') else None
