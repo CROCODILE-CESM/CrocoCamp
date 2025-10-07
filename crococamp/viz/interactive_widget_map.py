@@ -133,7 +133,7 @@ class InteractiveWidgetMap(InteractiveWidget):
         self.center_slider = widgets.SelectionSlider(
             options=[dummy_time],
             value=dummy_time,
-            description='Center time:',
+            description='Window centered on:',
             style={'description_width': 'initial'},
             continuous_update=False,
             layout=widgets.Layout(width='85%')
@@ -154,13 +154,15 @@ class InteractiveWidgetMap(InteractiveWidget):
             value=self.colorbar_slider.value[0],
             description='Colorbar min:',
             style={'description_width': 'initial'},
-            layout=widgets.Layout(width='210px')
+            layout=widgets.Layout(width='210px'),
+            step=0.001,
         )
         self.max_cb = widgets.FloatText(
             value=self.colorbar_slider.value[1],
             description='Colorbar max:',
             style={'description_width': 'initial'},
-            layout=widgets.Layout(width='210px')
+            layout=widgets.Layout(width='210px'),
+            step=0.001
         )
         
         # Vertical coordinate slider for selecting the depth range to plot
@@ -169,7 +171,7 @@ class InteractiveWidgetMap(InteractiveWidget):
             min=self.vertical_limits['min'],
             max=self.vertical_limits['max'],
             step=0.1,
-            description='Vertical coordinate range:',
+            description='Depth range [m]:',
             style={'description_width': 'initial'},
             continuous_update=False,
             layout=widgets.Layout(width='85%')
@@ -297,8 +299,8 @@ class InteractiveWidgetMap(InteractiveWidget):
                 (self.filtered_df['vertical'] >= self.vrange['min']) &
                 (self.filtered_df['vertical'] <= self.vrange['max'])
             ]
-            ref_df = self._compute_if_needed(
-                df_win[ ['latitude', 'longitude',self.plot_var] ]
+            df_win = self._compute_if_needed(
+                df_win[ ['latitude', 'longitude','vertical',self.plot_var] ]
             )
 
             fig = plt.figure(figsize=self.config.figure_size)
@@ -308,24 +310,27 @@ class InteractiveWidgetMap(InteractiveWidget):
             ax.add_feature(cfeature.OCEAN, color='lightblue', alpha=0.3)
             ax.add_feature(cfeature.BORDERS, linewidth=0.5)
             
-            if not ref_df.empty:
+            if not df_win.empty:
                 vmin, vmax = self.colorbar_slider.value
+                df_win = df_win.sort_values(by='vertical', ascending=False)
                 scatter = ax.scatter(
-                    ref_df['longitude'],
-                    ref_df['latitude'],
+                    df_win['longitude'],
+                    df_win['latitude'],
                     s=self.config.scatter_size,
                     alpha=self.config.scatter_alpha,
-                    c=ref_df[self.plot_var],
+                    c=df_win[self.plot_var],
                     vmin=vmin,
                     vmax=vmax,
                     cmap=self.config.colormap,
-                    label=f'{self.plot_var} (n={len(ref_df):,})',
+                    label=f'{self.plot_var} (n={len(df_win):,})',
                     marker='o',
                     edgecolors='none',
                     transform=ccrs.PlateCarree()
                 )
 
-                fig.colorbar(scatter, ax=ax, orientation="vertical", fraction=0.046, pad=0.04)
+                cbar = fig.colorbar(scatter, ax=ax, orientation="vertical", fraction=0.046, pad=0.04)
+                cbar.set_label(f'{self.plot_var} [{self.get_units(self.type_dropdown.value,self.plot_var)}]')
+
                 ax.set_extent(self.map_extent, crs=ccrs.PlateCarree())
 
             else:
@@ -348,8 +353,11 @@ class InteractiveWidgetMap(InteractiveWidget):
             )
             gl.top_labels = False
             gl.right_labels = False
+
+            wtd_days = window_td.days
+            wtd_hours = window_td.seconds // 3600
             plt.title(
-                f'{self.plot_title}\n({len(ref_df):,} points)\nTime window: {window_td}',
+                f'{self.plot_title}\n({len(df_win):,} points)\nTime window: {wtd_days} days, {wtd_hours} hours\nCentered on: {self.center_slider.value}',
                 fontsize=16,
                 pad=20
             )
