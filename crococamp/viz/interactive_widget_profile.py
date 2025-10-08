@@ -9,7 +9,7 @@ import pandas as pd
 from IPython.display import clear_output
 
 from .interactive_widget import InteractiveWidget
-from .config import ProfileConfig
+from .viz_config import ProfileConfig
 
 
 class InteractiveWidgetProfile(InteractiveWidget):

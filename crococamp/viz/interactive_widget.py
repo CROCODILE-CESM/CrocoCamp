@@ -18,7 +18,7 @@ class InteractiveWidget(ABC):
     - Abstract methods for widget-specific implementation
     """
 
-    def __init__(self, dataframe: Union[pd.DataFrame, dd.DataFrame], config=None):
+    def __init__(self, dataframe: Union[pd.DataFrame, dd.DataFrame], viz_config=None):
         """Initialize the interactive widget.
 
         Args:
@@ -26,7 +26,7 @@ class InteractiveWidget(ABC):
             config: Configuration instance for customization (optional)
         """
         self.df = dataframe
-        self.config = config
+        self.config = viz_config
         self.output = None
         self.units_dict = {}
         self.units_dict['_TEMPERATURE'] = 'm'

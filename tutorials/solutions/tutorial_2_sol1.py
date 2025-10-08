@@ -13,7 +13,7 @@ selected_variables = [
     "JULD", # this contains timestamp
     "LATITUDE",
     "LONGITUDE",
-    "PRES",
+    "PRES", # This will be automatically converted to depths in meters
     "TEMP",
     "PRES_QC",
     "TEMP_QC",

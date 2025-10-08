@@ -14,7 +14,7 @@ import pandas as pd
 from IPython.display import display, clear_output
 
 from .interactive_widget import InteractiveWidget
-from .config import MapConfig
+from .viz_config import MapConfig
 
 
 class InteractiveWidgetMap(InteractiveWidget):
