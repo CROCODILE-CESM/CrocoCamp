@@ -87,7 +87,7 @@ class MapConfig:
         self.figure_size = figure_size
         self.scatter_size = scatter_size
         self.scatter_alpha = scatter_alpha
-        self.default_window_hours = default_window_hours or (24 * 7 * 4)  # 4 weeks
+        self.default_window_hours = default_window_hours or (24)  # 24 hours
 
         if disallowed_plotvars is None:
             self.disallowed_plotvars = ["time", "type", "longitude", "latitude", "vertical"]
