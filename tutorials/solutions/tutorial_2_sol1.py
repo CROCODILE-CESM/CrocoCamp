@@ -29,6 +29,8 @@ year0 = 2010
 month0 = 5
 wmo_id = str(1900256)
 basename = basename + f".ARGO_{wmo_id}"
+if os.path.exists(outdir):
+    os.makedirs(outdir, exist_ok=True)
 
 # we loop to generate one file per day
 for j in range(10):
