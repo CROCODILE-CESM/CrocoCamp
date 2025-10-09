@@ -29,7 +29,7 @@ class InteractiveWidget(ABC):
         self.config = viz_config
         self.output = None
         self.units_dict = {}
-        self.units_dict['_TEMPERATURE'] = 'm'
+        self.units_dict['_TEMPERATURE'] = 'Celsius'
         self.units_dict['_SALINITY'] = 'kg/kg'
         self.units_dims_dict = {}
         self.units_dims_dict['residual'] = ''
