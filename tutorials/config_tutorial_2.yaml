@@ -23,11 +23,11 @@ obs_seq_in_folder: $WORK/2025-Crocodile-Workshop/CrocoCamp/tutorial_2/in_CL/
 
 ####### OUTPUT FILES #######
 # Output directory for processed files (will be created if it doesn't exist)
-output_folder: $WORK/crocodile_2025/CrocoCamp/tutorial_2/output/out_obs_seq_in/
-input_nml_bck: $WORK/crocodile_2025/CrocoCamp/tutorial_2/output/input_bckp
-trimmed_obs_folder: $WORK/crocodile_2025/CrocoCamp/tutorial_2/trimmed_obs_seq_in
-parquet_folder: $WORK/crocodile_2025/CrocoCamp/tutorial_2/out_parquet/
-tmp_folder: $WORK/crocodile_2025/CrocoCamp/tutorial_2/tmp/
+output_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/output/out_obs_seq_in/
+input_nml_bck: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/output/input_bckp
+trimmed_obs_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/trimmed_obs_seq_in
+parquet_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/out_parquet/
+tmp_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/tmp/
 
 ####### DART #######
 # Path to DART's perfect model obs executable

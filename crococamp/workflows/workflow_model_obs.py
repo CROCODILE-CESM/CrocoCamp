@@ -381,7 +381,7 @@ class WorkflowModelObs(workflow.Workflow):
         obs_output_path = os.path.join(self.config['output_folder'], obs_output_filename)
 
         print(f"Processing file #{counter + 1}:")
-        print(f"  Model input file: {model_in_filename}")
+        print(f"  Model input file: {model_in_file}")
         print(f"  Obs input file: {obs_in_file_nml}")
         print(f"  Perfect output file: {perfect_output_filename}")
         print(f"  Obs output file: {obs_output_filename}")
