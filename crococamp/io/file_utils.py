@@ -45,8 +45,6 @@ def get_model_time_in_days_seconds(model_in_file: str) -> Tuple[int, int]:
     with xr.open_dataset(model_in_file, decode_timedelta=True) as model_ds:
         model_time = model_ds.time.values
     model_time = np.atleast_1d(model_time)
-    print(len(model_time))
-    print(model_time)
     if len(model_time) > 1:
         raise ValueError(f"Model input file {model_in_file} contains multiple time steps, expected single time step.")
     return timestamp_to_days_seconds(model_time[0])
