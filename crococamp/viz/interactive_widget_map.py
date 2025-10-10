@@ -110,7 +110,7 @@ class InteractiveWidgetMap(InteractiveWidget):
                          if val not in self.config.disallowed_plotvars]
         self.refvar_dropdown = widgets.Dropdown(
             options=refvar_options,
-            value="residual" if "residual" in refvar_options else refvar_options[0],
+            value="difference" if "difference" in refvar_options else refvar_options[0],
             description="Plotted variable",
             style={'description_width': 'initial'},
             layout=widgets.Layout(width='85%')

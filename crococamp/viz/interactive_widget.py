@@ -32,10 +32,10 @@ class InteractiveWidget(ABC):
         self.units_dict['_TEMPERATURE'] = 'Celsius'
         self.units_dict['_SALINITY'] = 'kg/kg'
         self.units_dims_dict = {}
-        self.units_dims_dict['residual'] = ''
-        self.units_dims_dict['abs_residual'] = ''
-        self.units_dims_dict['squared_residual'] = '^2'
-        self.units_dims_dict['normalized_residual'] = 'remove'
+        self.units_dims_dict['difference'] = ''
+        self.units_dims_dict['abs_difference'] = ''
+        self.units_dims_dict['squared_difference'] = '^2'
+        self.units_dims_dict['normalized_difference'] = 'remove'
         self.units_dims_dict['log_likelihood'] = 'remove'
 
     def _setup_widget_workflow(self):

@@ -527,14 +527,14 @@ class WorkflowModelObs(workflow.Workflow):
         merged = merged.sort_values(by=sort_order)
 
         # Add diagnostic columns
-        merged['residual'] = merged['obs'] - merged[perf_model_col]
-        merged['abs_residual'] = np.abs(merged['residual'])
-        merged['squared_residual'] = merged['residual'] ** 2
+        merged['difference'] = merged['obs'] - merged[perf_model_col]
+        merged['abs_difference'] = np.abs(merged['difference'])
+        merged['squared_difference'] = merged['difference'] ** 2
         with warnings.catch_warnings(): # catch warnings for sqrt and log on invalid numbers (e.g. NaNs or so for failed interpolations)
             warnings.simplefilter("ignore", RuntimeWarning)
-            merged['normalized_residual'] = merged['residual'] / np.sqrt(merged['obs_err_var'])
+            merged['normalized_difference'] = merged['difference'] / np.sqrt(merged['obs_err_var'])
             merged['log_likelihood'] = -0.5 * (
-                merged['residual'] ** 2 / merged['obs_err_var'] +
+                merged['difference'] ** 2 / merged['obs_err_var'] +
                 np.log(2 * np.pi * merged['obs_err_var'])
             )
 
