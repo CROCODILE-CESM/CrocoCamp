@@ -69,7 +69,7 @@ class Namelist():
         try:
 
             if self.symlink_dest == namelist_path:
-                raise ValueError("Source and self.symlink_destination for symlink are the same.")
+                raise ValueError("Source and destination for symlink are the same.")
             if os.path.islink(self.symlink_dest):
                 os.remove(self.symlink_dest)
                 print(f"          Symlink '{self.symlink_dest}' removed.")
