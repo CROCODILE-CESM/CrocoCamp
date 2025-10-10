@@ -1,7 +1,7 @@
 [project]
 name = "crococamp"
 version = "0.1.0"
-description = "Tools for comparing ocean models, observations, and gridded products."
+description = "Python package for comparing ocean models with observations."
 authors = [{ name="Enrico Milanese", email="enrico.milanese@whoi.edu" }]
 readme = "README.md"
 license = {text = "MIT"}
