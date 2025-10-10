@@ -1,0 +1,24 @@
+name: crococamp
+channels:
+  - conda-forge
+dependencies:
+  - python==3.12
+  - cartopy
+  - cftime
+  - dask
+  - gsw
+  - ipykernel
+  - ipywidgets
+  - matplotlib
+  - netcdf4
+  - pandas
+  - pyarrow
+  - pyproj
+  - pyyaml
+  - scipy
+  - shapely
+  - xarray<=2025.07
+  - pip
+  - pip:
+      - .
+      - git+https://github.com/NCAR/pyDARTdiags.git@026671693b4240e15f3651f5414af2283cb471a7

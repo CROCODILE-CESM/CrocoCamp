@@ -5,7 +5,7 @@ model-observation comparisons with support for both dask and pandas DataFrames.
 """
 
 from .interactive_widget import InteractiveWidget
-from .config import MapConfig, ProfileConfig
+from .viz_config import MapConfig, ProfileConfig
 from .interactive_widget_map import InteractiveWidgetMap
 from .interactive_widget_profile import InteractiveWidgetProfile
 

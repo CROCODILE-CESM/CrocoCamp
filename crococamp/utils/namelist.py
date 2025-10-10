@@ -24,13 +24,13 @@ class Namelist():
         namelist_path: Path to the namelist file
         """
 
-        print("Setting up symlink for input.nml...")
+        print("    Setting up symlink for input.nml...")
         self.namelist_path = namelist_path
-        self.symlink_to_namelist()
+        self.symlink_dest = os.path.join(os.getcwd(), "input.nml")
 
         # Create backup and read namelist
         shutil.copy2(self.namelist_path, "input.nml.backup")
-        print("Created backup: input.nml.backup")
+        print("    Created backup: input.nml.backup")
 
         self.content = self.read_namelist()
 
@@ -58,38 +58,41 @@ class Namelist():
         except IOError as e:
             raise IOError(f"Could not write namelist file '{namelist_path}': {e}")
 
-    def symlink_to_namelist(self) -> None:
+    def symlink_to_namelist(self, namelist_path : str = None) -> None:
         """Create a symbolic link to a namelist file."""
-        if not os.path.isfile(self.namelist_path):
-            raise FileNotFoundError(f"Source namelist file '{self.namelist_path}' does not exist")
+        if namelist_path is None:
+            if not os.path.isfile(self.namelist_path):
+                raise FileNotFoundError(f"Source namelist file '{self.namelist_path}' does not exist")
+            else:
+                namelist_path = self.namelist_path
 
         try:
-            self.dest = os.path.join(os.getcwd(), "input.nml")
-            if self.dest == self.namelist_path:
-                raise ValueError("Source and self.destination for symlink are the same.")
-            if os.path.islink(self.dest):
-                os.remove(self.dest)
-                print(f"Symlink '{self.dest}' removed.")
-            elif os.path.exists(self.dest):
-                raise ValueError(f"'{self.dest}' exists and is not a symlink. Not removing nor continuing execution.")
-            os.symlink(self.namelist_path, self.dest)
-            print(f"Symlink {self.dest} -> '{self.namelist_path}' created.")
+
+            if self.symlink_dest == namelist_path:
+                raise ValueError("Source and destination for symlink are the same.")
+            if os.path.islink(self.symlink_dest):
+                os.remove(self.symlink_dest)
+                print(f"          Symlink '{self.symlink_dest}' removed.")
+            elif os.path.exists(self.symlink_dest):
+                raise ValueError(f"'{self.symlink_dest}' exists and is not a symlink. Not removing nor continuing execution.")
+            os.symlink(namelist_path, self.symlink_dest)
+            print(f"          Symlink {self.symlink_dest} -> '{namelist_path}' created.")
         except OSError as e:
             raise OSError(f"Could not create symlink from "
-                         f"'{self.namelist_path}' to '{self.dest}': {e}")
+                         f"'{namelist_path}' to '{self.symlink_dest}': {e}")
 
     def cleanup_namelist_symlink(self) -> None:
         """Remove the symbolic link to the namelist file."""
         try:
-            if os.path.islink(self.dest):
-                os.remove(self.dest)
-                print(f"Symlink '{self.dest}' removed.")
-            elif os.path.exists(self.dest):
-                print(f"'{self.dest}' exists but is not a symlink. Not removing.")
+            if os.path.islink(self.symlink_dest):
+                os.remove(self.symlink_dest)
+                print(f"          Symlink '{self.symlink_dest}' removed.")
+            elif os.path.exists(self.symlink_dest):
+                print(f"          '{self.symlink_dest}' exists but is not a symlink. Not removing.")
             else:
-                print(f"No symlink '{self.dest}' found to remove.")
+                print(f"          No symlink '{self.symlink_dest}' found to remove.")
         except OSError as e:
-            raise OSError(f"Could not remove symlink '{self.dest}': {e}")
+            raise OSError(f"Could not remove symlink '{self.symlink_dest}': {e}")
 
     def _format_namelist_block_param(self, param: str, value: Union[Dict, List], dict_format: str = 'triplet') -> List[str]:
         """Format a dict or list value as multi-line namelist block.

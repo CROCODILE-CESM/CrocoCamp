@@ -9,6 +9,7 @@ import yaml
 
 def resolve_path(path: str, config_file: str) -> str:
     """Resolve path to absolute, using config_file location as base for relative paths."""
+    path = os.path.expandvars(path)
     if os.path.isabs(path):
         return path
     config_dir = os.path.dirname(os.path.abspath(config_file))
@@ -24,10 +25,9 @@ def read_config(config_file: str) -> Dict[str, Any]:
         with open(config_file, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
         for key in config:
-            if isinstance(config[key], str):
+            if isinstance(config[key], str) and key != "layer_name":
                 config[key] = resolve_path(config[key], config_file)
 
-        config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
         config = convert_time_window(config)
         return config
     except yaml.YAMLError as e:
@@ -133,7 +133,7 @@ def clear_folder(folder_path: str) -> None:
         try:
             if os.path.isfile(file_path) or os.path.islink(file_path):
                 os.remove(file_path)
-                print(f'Deleted file: {file_path}')
+                print(f'  Deleted file: {file_path}')
         except OSError as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
 

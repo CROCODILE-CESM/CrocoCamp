@@ -14,8 +14,8 @@ class ProfileConfig:
         self,
         colormap: str = 'viridis',
         figure_size: Tuple[int, int] = (10, 8),
-        marker_size: int = 50,
-        marker_alpha: float = 0.7,
+        marker_size: int = 5,
+        marker_alpha: float = 1,
         invert_yaxis: bool = True,
         grid: bool = True,
         initial_x: Optional[str] = None,
@@ -56,7 +56,7 @@ class MapConfig:
         map_extent: Optional[Tuple[float, float, float, float]] = None,
         vertical_range: Optional[Tuple[float, float]] = None,
         padding: float = 5.0,
-        figure_size: Tuple[int, int] = (10, 12),
+        figure_size: Tuple[int, int] = (8, 6),
         scatter_size: int = 100,
         scatter_alpha: float = 0.7,
         default_window_hours: Optional[int] = None,
@@ -87,7 +87,7 @@ class MapConfig:
         self.figure_size = figure_size
         self.scatter_size = scatter_size
         self.scatter_alpha = scatter_alpha
-        self.default_window_hours = default_window_hours or (24 * 7 * 4)  # 4 weeks
+        self.default_window_hours = default_window_hours or (24)  # 24 hours
 
         if disallowed_plotvars is None:
             self.disallowed_plotvars = ["time", "type", "longitude", "latitude", "vertical"]

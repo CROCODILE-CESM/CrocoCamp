@@ -9,7 +9,7 @@ import pandas as pd
 from IPython.display import clear_output
 
 from .interactive_widget import InteractiveWidget
-from .config import ProfileConfig
+from .viz_config import ProfileConfig
 
 
 class InteractiveWidgetProfile(InteractiveWidget):
@@ -197,7 +197,9 @@ class InteractiveWidgetProfile(InteractiveWidget):
                     plot_df[y_col],
                     marker='o',
                     linestyle='None',
-                    label=obs_type
+                    label=obs_type,
+                    markersize = self.config.marker_size,
+                    alpha = self.config.marker_alpha
                 )
 
             ax.legend()

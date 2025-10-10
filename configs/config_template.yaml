@@ -1,0 +1,65 @@
+# ==========================================
+# CrocoCamp Configuration Template 
+# ==========================================
+# This template file contains all the necessary configuration parameters for running
+# CrocoCamp model-observation comparison workflows. Copy this file and modify the 
+# paths below to match your local system setup.
+#
+# For more details, see the README.md file and tutorial notebooks.
+
+####### INPUT FILES #######
+# Directory containing MOM6 model output files (.nc format) that you want to
+# compare with observations
+model_files_folder: /path/to/model_files/
+
+# Model configuration files (all must be .nc files from your MOM6 simulation)
+# template_file: Any one of your model output files (used to read grid structure and time info)
+# static_file: MOM6 static file containing time-invariant grid information
+# ocean_geometry: MOM6 ocean geometry file containing grid cell areas, volumes, etc.
+template_file: /path/to/template_file
+static_file: /path/to/static_file
+ocean_geometry:  /path/to/ocean_geometry
+
+# Directory containing observation files in DART observation sequence format
+obs_seq_in_folder: /path/to/obs/
+
+####### OUTPUT FILES #######
+# Output directories for processed files (will be created automatically if they don't exist)
+# output_folder: Where perfect_model_obs results will be stored (obs_seq.out files)
+# input_nml_bck: Backup location for DART input.nml configuration files
+# trimmed_obs_folder: Location for observation files trimmed to model grid boundaries
+# parquet_folder: Final output location for processed model-observation comparison data
+# tmp_folder: Folder to store temporary files
+output_folder: $WORK/CrocoCamp_output/workflow_1/out_obs_seq_in/
+input_nml_bck: $WORK/CrocoCamp_output/workflow_1/input_bckp/
+trimmed_obs_folder: $WORK/CrocoCamp_output/workflow_1/out_trimmed_obs_seq_in/
+parquet_folder: $WORK/CrocoCamp_output/workflow_1/out_parquet/
+tmp_folder: $WORK/CrocoCamp_output/workflow_1/tmp/
+
+####### DART CONFIGURATION #######
+# Path to DART's perfect_model_obs executable directory: it should point to your
+# compiled DART/models/MOM6/work directory
+
+perfect_model_obs_dir: /path/to/DART/models/MOM6/work/
+
+# Observation types to include in the comparison
+# You can use specific types (e.g., FLOAT_TEMPERATURE) or groups (e.g.,
+# ALL_TEMPERATURE); the ALL_ syntax automatically includes all observation types
+# for that quantity
+use_these_obs:
+   - ALL_TEMPERATURE           # Includes ALL temperature observation types (Argo, CTD, XBT, etc.)
+   # Other examples:
+   # - ALL_SALINITY            # Includes ALL salinity observation types  
+   # - FLOAT_TEMPERATURE       # Include only float temperature measurements
+   # - FLOAT_SALINITY          # Include only float salinity measurements
+
+# Time window for matching observations to model output
+# This determines how close in time observations need to be to model output for interpolation
+time_window:
+  days: 999      # Primary time window in days (999 = very loose matching)
+  hours: 0       # Additional hours
+  minutes: 0     # Additional minutes
+  seconds: 0     # Additional seconds
+  weeks: 0       # Additional weeks
+  months: 0      # Additional months (30 days/month)
+  years: 0       # Additional years (365 days/year)
