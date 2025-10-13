@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.0] - 2025-10-13
+## [0.1.1] - 2025-10-13
 - Add supports for NCAR-Derecho machine
 
 ## [0.1.0] - 2025-10-10
