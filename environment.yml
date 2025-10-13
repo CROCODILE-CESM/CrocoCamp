@@ -3,22 +3,22 @@ channels:
   - conda-forge
 dependencies:
   - python==3.12
-  - cartopy
-  - cftime
-  - dask
-  - gsw
-  - ipykernel
-  - ipywidgets
-  - matplotlib
-  - netcdf4
-  - pandas
-  - pyarrow
-  - pyproj
-  - pyyaml
-  - scipy
-  - shapely
+  - cartopy<=0.25.0
+  - cftime<=1.6.4
+  - dask<=2025.9.1
+  - gsw<=3.6.20
+  - ipykernel<=6.30.1
+  - ipywidgets<=8.1.7
+  - matplotlib<=3.10.6
+  - netcdf4<=1.7.2
+  - pandas<=2.3.3
+  - pyarrow<=21.0.0
+  - pyproj<=3.7.2
+  - pyyaml<=6.0.3
+  - scipy<=1.16.2
+  - shapely<=2.1.2
   - xarray<=2025.07
-  - pip
+  - pip<=25.2
   - pip:
       - .
       - git+https://github.com/NCAR/pyDARTdiags.git@026671693b4240e15f3651f5414af2283cb471a7
