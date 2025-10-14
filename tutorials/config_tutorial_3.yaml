@@ -31,8 +31,7 @@ tmp_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_3/tmp/
 
 ####### DART #######
 # Path to DART's perfect model obs executable
-#perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Casper/models/MOM6/work #CASPER
-perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Derecho/models/MOM6/work #DERECHO
+perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Casper/models/MOM6/work
 
 # Observation types to assimilate (can include ALL_<FIELD> entries)
 use_these_obs:
