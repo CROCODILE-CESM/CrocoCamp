@@ -271,10 +271,31 @@ class InteractiveWidgetMap(InteractiveWidget):
         col_min = self._compute_if_needed(df_win[self.plot_var].min())
         col_max = self._compute_if_needed(df_win[self.plot_var].max())
         step = (col_max - col_min) / 100. if (col_max - col_min) > 0 else 0.01
-        self.colorbar_slider.min = float(col_min)
-        self.colorbar_slider.max = float(col_max)
+
+        # Update slider properties in the correct order to avoid constraint violations
+        # First set value to be within the old range but prepare for new range
+        old_min = self.colorbar_slider.min
+        old_max = self.colorbar_slider.max
+        new_min = float(col_min)
+        new_max = float(col_max)
+
+        # If new range is entirely above old range, raise max first
+        if new_min >= old_max:
+            self.colorbar_slider.max = new_max
+            self.colorbar_slider.min = new_min
+        # If new range is entirely below old range, lower min first
+        elif new_max <= old_min:
+            self.colorbar_slider.min = new_min
+            self.colorbar_slider.max = new_max
+        # Otherwise, expand the range first, then narrow it
+        else:
+            self.colorbar_slider.min = min(old_min, new_min)
+            self.colorbar_slider.max = max(old_max, new_max)
+            self.colorbar_slider.min = new_min
+            self.colorbar_slider.max = new_max
+
         self.colorbar_slider.step = step
-        self.colorbar_slider.value = [float(col_min), float(col_max)]
+        self.colorbar_slider.value = [new_min, new_max]
 
     def _plot(self) -> None:
         """Create the map plot with current settings."""
@@ -404,33 +425,73 @@ class InteractiveWidgetMap(InteractiveWidget):
     def _on_type_change(self, change):
         """Callback for type dropdown change event."""
         self._update_filtered_df(change['new'])
-        self.window_slider.max = max(self.total_hours, 1)
-        self.window_slider.value = min(self.window_slider.value, self.window_slider.max)
-        self._update_center_slider(self._get_window_timedelta())
-        self._update_colorbar_slider()
-        self.plot_map(self.center_slider.value, self._get_window_timedelta())
-        
+
+        # Temporarily disable observers to prevent recursive callbacks
+        self.window_slider.unobserve(self._on_window_change, names='value')
+        self.center_slider.unobserve(self._on_center_change, names='value')
+        self.colorbar_slider.unobserve(self._on_colorbar_change, names='value')
+
+        try:
+            self.window_slider.max = max(self.total_hours, 1)
+            self.window_slider.value = min(self.window_slider.value, self.window_slider.max)
+            self._update_center_slider(self._get_window_timedelta())
+            self._update_colorbar_slider()
+            self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        finally:
+            # Re-enable observers
+            self.window_slider.observe(self._on_window_change, names='value')
+            self.center_slider.observe(self._on_center_change, names='value')
+            self.colorbar_slider.observe(self._on_colorbar_change, names='value')
+
     def _on_refvar_change(self, change):
         """Callback for reference variable dropdown change event."""
         self._update_refvar(change['new'])
-        self.window_slider.max = max(self.total_hours, 1)
-        self.window_slider.value = min(self.window_slider.value, self.window_slider.max)
-        self._update_center_slider(self._get_window_timedelta())
-        self._update_colorbar_slider()
-        self.plot_map(self.center_slider.value, self._get_window_timedelta())
-        
+
+        # Temporarily disable observers to prevent recursive callbacks
+        self.window_slider.unobserve(self._on_window_change, names='value')
+        self.center_slider.unobserve(self._on_center_change, names='value')
+        self.colorbar_slider.unobserve(self._on_colorbar_change, names='value')
+
+        try:
+            self.window_slider.max = max(self.total_hours, 1)
+            self.window_slider.value = min(self.window_slider.value, self.window_slider.max)
+            self._update_center_slider(self._get_window_timedelta())
+            self._update_colorbar_slider()
+            self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        finally:
+            # Re-enable observers
+            self.window_slider.observe(self._on_window_change, names='value')
+            self.center_slider.observe(self._on_center_change, names='value')
+            self.colorbar_slider.observe(self._on_colorbar_change, names='value')
+
     def _on_window_change(self, change):
         """Callback for window slider/text change event."""
         window_td = self._get_window_timedelta()
-        self._update_center_slider(window_td)
-        self._update_colorbar_slider()
-        self.plot_map(self.center_slider.value, window_td)
-        
+
+        # Temporarily disable observers to prevent recursive callbacks
+        self.center_slider.unobserve(self._on_center_change, names='value')
+        self.colorbar_slider.unobserve(self._on_colorbar_change, names='value')
+
+        try:
+            self._update_center_slider(window_td)
+            self._update_colorbar_slider()
+            self.plot_map(self.center_slider.value, window_td)
+        finally:
+            # Re-enable observers
+            self.center_slider.observe(self._on_center_change, names='value')
+            self.colorbar_slider.observe(self._on_colorbar_change, names='value')
+
     def _on_center_change(self, change):
         """Callback for center slider change event."""
-        self._update_colorbar_slider()
-        self.plot_map(self.center_slider.value, self._get_window_timedelta())
-        
+        # Temporarily disable colorbar observer to prevent recursive callbacks
+        self.colorbar_slider.unobserve(self._on_colorbar_change, names='value')
+
+        try:
+            self._update_colorbar_slider()
+            self.plot_map(self.center_slider.value, self._get_window_timedelta())
+        finally:
+            # Re-enable observer
+            self.colorbar_slider.observe(self._on_colorbar_change, names='value')
     def _on_colorbar_change(self, change):
         """Callback for colorbar slider change event."""
         min_val, max_val = change['new']
@@ -452,5 +513,13 @@ class InteractiveWidgetMap(InteractiveWidget):
         """Callback for vertical coordinate slider change event."""
         window_td = self._get_window_timedelta()
         self.vrange['min'], self.vrange['max'] = self.vrange_slider.value
-        self._update_colorbar_slider()
-        self.plot_map(self.center_slider.value, window_td)
+
+        # Temporarily disable colorbar observer to prevent recursive callbacks
+        self.colorbar_slider.unobserve(self._on_colorbar_change, names='value')
+
+        try:
+            self._update_colorbar_slider()
+            self.plot_map(self.center_slider.value, window_td)
+        finally:
+            # Re-enable observer
+            self.colorbar_slider.observe(self._on_colorbar_change, names='value')
