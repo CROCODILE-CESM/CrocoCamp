@@ -32,6 +32,10 @@ class InteractiveWidget(ABC):
         self.units_dict['_TEMPERATURE'] = 'Celsius'
         self.units_dict['_SALINITY'] = 'kg/kg'
         self.units_dims_dict = {}
+        self.units_dims_dict['interpolated_model'] = ''
+        self.units_dims_dict['interpolated_model_QC'] = 'remove'
+        self.units_dims_dict['obs'] = ''
+        self.units_dims_dict['obs_err_var'] = ''
         self.units_dims_dict['difference'] = ''
         self.units_dims_dict['abs_difference'] = ''
         self.units_dims_dict['squared_difference'] = '^2'

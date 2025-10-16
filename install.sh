@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-
+module load conda
 CONDA_ENV_NAME="crococamp-2025"
 mamba env create --name "$CONDA_ENV_NAME" -f environment.yml -y
 CONDA_ENV_PATH=$(conda env list | awk -v env="$CONDA_ENV_NAME" '$1 == env { print $NF }')
