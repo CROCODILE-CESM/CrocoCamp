@@ -10,6 +10,5 @@ mkdir -p $CONDA_ENV_PATH/etc/conda/activate.d
 
 # load environmental paths
 cp ./envpaths.sh $CONDA_ENV_PATH/etc/conda/activate.d/
-echo 'source ./envpaths.sh' > $CONDA_ENV_PATH/etc/conda/activate.d/set_paths.sh
-chmod +x $CONDA_ENV_PATH/etc/conda/activate.d/load_modules.sh
+echo 'source ./envpaths.sh' > $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
 chmod +x $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
