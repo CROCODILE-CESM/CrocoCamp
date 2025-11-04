@@ -24,6 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
+download_db = "scripts.download_db:main"
 perfect-model-obs = "crococamp.cli.perfect_model_obs:main"
 
 [build-system]

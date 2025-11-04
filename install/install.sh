@@ -1,4 +1,6 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 ## create conda environment with name set in envpaths.sh
 source ./envpaths.sh
@@ -9,6 +11,7 @@ CONDA_ENV_PATH=$(conda env list | awk -v env="$CONDA_ENV_NAME" '$1 == env { prin
 mkdir -p $CONDA_ENV_PATH/etc/conda/activate.d
 
 # load environmental paths
-cp ./envpaths.sh $CONDA_ENV_PATH/etc/conda/activate.d/
-echo 'source ./envpaths.sh' > $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
+CONDA_SCRIPTS_PATH=$CONDA_ENV_PATH/etc/conda/activate.d/
+cp ./envpaths.sh $CONDA_SCRIPTS_PATH
+echo "source \"${CONDA_SCRIPTS_PATH}envpaths.sh\"" > $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
 chmod +x $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
