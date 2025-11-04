@@ -16,3 +16,9 @@ input.nml.backup
 # demo's input and output folders
 demo/in*
 demo/out*
+
+# CrocoLake and datasets
+CrocoLake/
+
+# config files
+install/envpaths.sh
