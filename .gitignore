@@ -19,6 +19,7 @@ demo/out*
 
 # CrocoLake and datasets
 CrocoLake/
+2025_Crocodile_tutorial
 
 # config files
 install/envpaths.sh

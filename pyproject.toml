@@ -26,7 +26,8 @@ dependencies = [
 ]
 
 [project.scripts]
-download_db = "crococamp.cli.download_db:main"
+download_crocolake = "crococamp.cli.download_crocolake:main"
+download_tutorials_data = "crococamp.cli.download_tutorials_data:main"
 perfect-model-obs = "crococamp.cli.perfect_model_obs:main"
 
 [build-system]
