@@ -24,6 +24,10 @@ cp ./envpaths.sh $CONDA_SCRIPTS_PATH
 echo "source \"${CONDA_SCRIPTS_PATH}envpaths.sh\"" > $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
 chmod +x $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
 
+## register jupyter kernel for this environment
+echo "Registering Jupyter kernel for $CONDA_ENV_NAME..."
+$CONDA_ENV_PATH/bin/python -m ipykernel install --user --name="$CONDA_ENV_NAME" --display-name="Python ($CONDA_ENV_NAME)"
+
 if [[ "$TUTORIAL" -eq 1 ]]; then
     ./tutorials_download.sh
 fi

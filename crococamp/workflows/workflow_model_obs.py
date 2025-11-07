@@ -444,6 +444,7 @@ class WorkflowModelObs(workflow.Workflow):
         with open(perfect_model_obs_log_file, "a") as logfile: # redirect pmo output to logfile
             process = subprocess.Popen(
                 [perfect_model_obs],
+                cwd=os.getcwd(),
                 stdout=logfile,
                 stderr=subprocess.STDOUT,  # Combine stderr with stdout
                 text=True
