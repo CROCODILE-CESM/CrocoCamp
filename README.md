@@ -37,17 +37,53 @@ Future:
 
 DART (Data Assimilation Research Testbed) is required to run the `perfect_model_obs` executable, which interpolates MOM6 ocean model output onto the observation space provided in obs_seq.in format. In the context of this workshop, DART is already pre-compiled both on Derecho and Casper. If you are interested in the installation on other operating systems or more detailed information, see the [DART documentation](https://docs.dart.ucar.edu/).
 
-#### Clone CrocoCamp - 2025 Crocodile Workshop branch
+### Installation Steps
+
+#### 1. Clone CrocoCamp
 ```bash
-git clone https://github.com/CROCODILE-CESM/CrocoCamp.git --branch 2025-Crocodile-Workshop --single-branch
+git clone https://github.com/CROCODILE-CESM/CrocoCamp.git
+cd CrocoCamp/install
 ```
 
-#### Use `install.sh` to create conda environment and set python path for DART
+#### 2. Configure Environment Paths
+
+Copy the template file and edit it to set your DART installation path and conda environment name:
+
 ```bash
-cd CrocoCamp
-./install.sh
-conda activate crococamp-2025
+cp envpaths.sh.template envpaths.sh
 ```
+
+Edit `envpaths.sh` to set:
+- `DART_ROOT_PATH`: Path to your DART installation (e.g., `/path/to/DART/`)
+- `CONDA_ENV_NAME`: Name for your conda environment (e.g., `crococamp`)
+
+**Note for NCAR HPC Users:** You can use the pre-configured `envpaths_NCAR.sh` and `install_NCAR.sh` which are already set up with NCAR-specific paths.
+
+#### 3. Run Installation Script
+
+Create the conda environment and configure paths:
+
+```bash
+./install.sh
+```
+
+To also download tutorial datasets from Zenodo:
+```bash
+./install.sh --tutorial
+```
+
+#### 4. Activate the Environment
+
+```bash
+conda activate crococamp  # or your chosen environment name
+```
+
+The installation script will:
+- Create a conda environment from `environment.yml`
+- Configure the environment to load DART paths automatically when activated
+- Set up Python paths for CrocoLake observation converters
+- Register a Jupyter kernel for the environment
+- Optionally download tutorial datasets (with `--tutorial` flag)
 
 ## Getting Started
 
