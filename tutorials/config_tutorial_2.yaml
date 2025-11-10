@@ -11,27 +11,27 @@
 
 ####### INPUT FILES #######
 # Directory containing model .nc files to process
-model_files_folder: /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6/
+model_files_folder: ../2025_Crocodile_tutorial/tutorial_1/in_mom6/
 
 # Model configuration files (must be .nc files)
-template_file: /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6/NWA12_demo_01.nc
-static_file: /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6_ref/NWA12_demo_static.nc
-ocean_geometry:  /glade/campaign/cgd/oce/projects/CROCODILE/workshops/2025/CrocoCamp/tutorial_1/in_mom6_ref/NWA12_demo_ocean_geometry.nc
+template_file: ../2025_Crocodile_tutorial/tutorial_1/in_mom6/NWA12_demo_01.nc
+static_file: ../2025_Crocodile_tutorial/tutorial_1/in_mom6_ref/NWA12_demo_static.nc
+ocean_geometry:  ../2025_Crocodile_tutorial/tutorial_1/in_mom6_ref/NWA12_demo_ocean_geometry.nc
 
 # Directory containing observation files
-obs_seq_in_folder: $WORK/2025-Crocodile-Workshop/CrocoCamp/tutorial_2/in_CL/
+obs_seq_in_folder: ../2025_Crocodile_tutorial/tutorial_2/in_CrocoLake/
 
 ####### OUTPUT FILES #######
 # Output directory for processed files (will be created if it doesn't exist)
-output_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/output/out_obs_seq_in/
-input_nml_bck: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/output/input_bckp
-trimmed_obs_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/trimmed_obs_seq_in
-parquet_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/out_parquet/
-tmp_folder: $WORK/crocodile_2025/CrocoCamp/output/tutorial_2/tmp/
+output_folder: ../2025_Crocodile_tutorial/output/tutorial_2/output/out_obs_seq_in/
+input_nml_bck: ../2025_Crocodile_tutorial/output/tutorial_2/output/input_bckp
+trimmed_obs_folder: ../2025_Crocodile_tutorial/output/tutorial_2/trimmed_obs_seq_in
+parquet_folder: ../2025_Crocodile_tutorial/output/tutorial_2/out_parquet/
+tmp_folder: ../2025_Crocodile_tutorial/output/tutorial_2/tmp/
 
 ####### DART #######
 # Path to DART's perfect model obs executable
-perfect_model_obs_dir: /glade/u/home/emilanese/work/DART-Casper/models/MOM6/work
+perfect_model_obs_dir: $DART_ROOT_PATH/models/MOM6/work  #CASPER
 
 # Observation types to interpolate to (can include ALL_<FIELD> entries)
 use_these_obs:
