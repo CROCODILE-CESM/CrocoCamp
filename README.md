@@ -1,95 +1,226 @@
 # CrocoCamp
 
-**CrocoCamp** is a Python toolset for harmonizing and comparing ocean model outputs and observation datasets. It streamlines workflows for interpolating model data into the observation space, producing tabular data in Parquet format ready for analysis and interactive visualization.
+**CrocoCamp** is a Python toolset for comparing ocean model outputs and observation datasets. It streamlines workflows for interpolating model data into the observation space, producing tabular data in Parquet format ready for analysis and interactive visualization.
 
+## Summary
+
+- [Features](#features)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+    - [Observation Types Configuration](#observation-types-configuration)
+    - [Time window](#time-window)
+- [Architecture](#architecture)
+    - [Key Classes and Functions](#key-classes-and-functions)
+- [Usage](#usage)
+    - [Programmatic Usage (Class-based API, e.g for Jupyter notebooks)](#programmatic-usage-class-based-api-eg-for-jupyter-notebooks)
+    - [Command Line Interface](#command-line-interface)
+      
 ## Features
 
 Current:
 - Batch processing of model and observation files
 - Generation of diagnostic and comparison files in Parquet format
-- Robust YAML configuration and command-line interface
+- Robust YAML configuration
 - Designed for extensibility and reproducibility
 - Ocean models supported: MOM6
 - Ocean observation format supported: DART obs_seq.in format
-- **Modular architecture** with clean separation of concerns
 
 Future:
-- Automated regridding of model grids when comparing different model resolutions or different ocean models (e.g. ROMS and MOM6)
-- Automated regridding when comparing models to gridded products (e.g. GLORYS)
+- Refined temporal and spatial resampling tools:
+    - Customizable time windows independent of model and obs_seq.in files aggregation period.
+    - Automated regridding when comparing models to gridded products (e.g. GLORYS)
+
+## Installation
+
+### Prerequisites and Dependencies
+
+DART (Data Assimilation Research Testbed) is required to run the `perfect_model_obs` executable, which interpolates MOM6 ocean model output onto the observation space provided in obs_seq.in format. In the context of this workshop, DART is already pre-compiled both on Derecho and Casper. If you are interested in the installation on other operating systems or more detailed information, see the [DART documentation](https://docs.dart.ucar.edu/).
+
+### Installation Steps
+
+#### 1. Clone CrocoCamp
+```bash
+git clone https://github.com/CROCODILE-CESM/CrocoCamp.git
+cd CrocoCamp/install
+```
+
+#### 2. Configure Environment Paths
+
+Copy the template file and edit it to set your DART installation path and conda environment name:
+
+```bash
+cp envpaths.sh.template envpaths.sh
+```
+
+Edit `envpaths.sh` to set:
+- `DART_ROOT_PATH`: Path to your DART installation (e.g., `/path/to/DART/`)
+- `CONDA_ENV_NAME`: Name for your conda environment (e.g., `crococamp`)
+
+**Note for NCAR HPC Users:** You can use the pre-configured `envpaths_NCAR.sh` and `install_NCAR.sh` which are already set up with NCAR-specific paths.
+
+#### 3. Run Installation Script
+
+Create the conda environment and configure paths:
+
+```bash
+./install.sh
+```
+
+To also download tutorial datasets from Zenodo:
+```bash
+./install.sh --tutorial
+```
+
+#### 4. Activate the Environment
+
+```bash
+conda activate crococamp  # or your chosen environment name
+```
+
+The installation script will:
+- Create a conda environment from `environment.yml`
+- Configure the environment to load DART paths automatically when activated
+- Set up Python paths for CrocoLake observation converters
+- Register a Jupyter kernel for the environment
+- Optionally download tutorial datasets (with `--tutorial` flag)
+
+## Getting Started
+
+The best way to learn CrocoCamp is through the hands-on tutorials in the `tutorials/` folder. These Jupyter notebooks guide you through:
+
+**Tutorial 1** (`tutorial1_MOM6-CL-comparison.ipynb`): 
+- Setting up a basic model-observation comparison workflow
+- Using MOM6 ocean model output and CrocoLake observations
+- Visualizing results with the interactive map widget
+
+**Tutorial 2** (`tutorial2_MOM6-CL-comparison-float.ipynb`):
+- Generating custom observation files from CrocoLake 
+- Analyzing single Argo float profiles
+- Using the interactive profile widget for vertical profile comparisons
+- Passing custom configurations to profile and map widgets
+
+These tutorials demonstrate:
+- Loading and configuring workflows with `WorkflowModelObs`
+- Running the complete processing pipeline
+- Exploring results including diagnostic values such as:
+  - `residual` (obs - model)
+  - `abs_residual` (absolute residual)
+  - `normalized_residual` (residual normalized by observation error)
+  - `squared_residual` (squared residual)
+  - `log_likelihood` (log-likelihood of model-observation fit)
+
+## Configuration
+
+Edit the provided `configs/config_template.yaml` to set your input, output, and model/obs paths. The template file contains all necessary configuration options with detailed comments
+
+**Note for NCAR HPC Users:** The paths in the provided configuration files and some paths used in the tutorial notebooks are pre-configured for resources available on NCAR's High Performance Computing systems, including:
+- CrocoLake observation dataset paths
+- DART tools paths 
+- Pre-compiled `perfect_model_obs` executable locations
+These paths need to be adjusted if running on other systems.
+Note that DART needs to be compiled separately on Derecho and Casper, so we provide two pre-compiled paths for the workshop:
+- Derecho: `/glade/u/home/emilanese/work/CROCODILE-DART-fork/models/MOM6/work`
+- Casper: `/glade/u/home/emilanese/work/DART-Casper/models/MOM6/work`
+
+### Observation Types Configuration
+
+CrocoCamp supports automatic configuration of [observation types for DART]([url](https://github.com/NCAR/DART/blob/main/observations/forward_operators/obs_def_ocean_mod.rst)) assimilation through the `use_these_obs` field in your configuration file.
+
+#### Using specific observation types
+
+You need to specify at least one observation type to use, and that needs to be in your observation sequence files header.
+
+Specify your desired observation types in the `use_these_obs` field in `config.yaml`, for example:
+
+```yaml
+# Basic observation types
+use_these_obs:
+  - FLOAT_TEMPERATURE
+  - FLOAT_SALINITY
+  - CTD_TEMPERATURE
+  - CTD_SALINITY
+```
+
+This would interpolate MOM6 model results to all observations marked with the same verbatim type in the provided observation sequence files.
+
+#### ALL_<FIELD> Syntax
+
+You can use the `ALL_<FIELD>` syntax to automatically include all observation types for a specific quantity, for example:
+
+```yaml
+use_these_obs:
+  - ALL_TEMPERATURE    # Includes all temperature-related obs types
+  - ALL_SALINITY       # Includes all salinity-related obs types  
+```
+
+In this case, CrocoCamp builds a dictionary of all the supported temperature and salinity observation types in DART, and will look for all of those types in the observation sequence files you provided.
+
+### Time window
+
+The `time_window` field in the configuration file determines the temporal range over which model and observation sequence files are matched. For example, for a model file that contains daily averages for the date 2025-10-01 12:00 and observation sequence file that contains observations between 2025-09-30 10:00 and 2025-10-01 23:00, the time window must be 52 hours or larger to interpolate the model onto the observations in the observation file. The time window is centered on the model date, so 26 hours on each side would span the time between 2025-09-30 10:00 and 2025-10-02 14:00, including all the observations. Note that it's an 'all or nothing' approach: if only one observation is not inside the time window, the whole file is skipped and no observation is used.
+
+In pseudo code:
+```
+tw                 # provided time window
+tm                 # model date
+to_1               # minimum observation time in observation sequence file
+to_2               # minimum observation time in observation sequence file
+tm_1 = tm - tw/2   # lower bound for matching
+tm_2 = tm + tw/2   # higher bound for matching
+if (tm_1 <= to_1 <= tm_2) and (tm_1 <= to_2 <= tm_2):
+    interpolate the model onto this observation sequence file
+else:
+    skip and check next observation sequence file (if any)
+```
 
 ## Architecture
 
 The toolkit is organized into logical modules:
 
 - **`utils/`** - Configuration and namelist file utilities
-- **`io/`** - File handling, model grids, and observation sequence processing
+- **`io/`** - File handling and observation sequence processing
 - **`workflows/`** - High-level workflow orchestration
 - **`cli/`** - Command-line interfaces
+- **`viz/`** - Interactive visualization widgets for data analysis
 
-## Installation
+### Key Classes and Functions
 
-### Prerequisites and Dependencies
+#### Workflow Classes
 
-#### 1. Install DART for MOM6
-DART (Data Assimilation Research Testbed) is required to run the `perfect_model_obs` executable, which interpolates MOM6 ocean model output onto the observation space provided in obs_seq.in format. The following instructions are for Linux machines.
+**`WorkflowModelObs`** - Main workflow class for model-observation comparisons
+- `from_config_file(config_file)` - Create workflow from YAML configuration file
+- `run()` - Execute complete workflow 
+- `process_files()` - Process model and observation files
+- `merge_model_obs_to_parquet()` - Convert results to parquet format
+- `get_config(key)` - Get configuration value
+- `set_config(key, value)` - Set configuration value
+- `print_config()` - Print current configuration
 
-```bash
-git clone git@github.com:CROCODILE-CESM/DART.git
-cd DART
-git checkout mom6-scripting
-cd build_templates
-cp mkmf.template.intel.linux mkmf.template
-cd ../models/MOM6/work
-./quickbuild.sh
-```
+#### Visualization Classes
 
-For installation on other operating systems or more detailed information, see the [DART documentation](https://docs.dart.ucar.edu/).
+Both widgets below support both pandas and dask DataFrames.
 
-#### 2. Create conda environment
-```bash
-mamba create --name crococamp python=3.12
-conda activate crococamp
-```
+**`InteractiveWidgetMap`** - Interactive map widget for spatial data visualization
+- Constructor: `InteractiveWidgetMap(dataframe, config=None)`
+- `setup()` - Initialize and display the interactive map widget
+- Provides dropdowns for selecting plot variables, observation types, and time filtering
 
-#### 3. Install pyDARTdiags
-```bash
-git clone git@github.com:NCAR/pyDARTdiags.git
-cd pyDARTdiags
-pip install .
-```
+**`MapConfig`** - Configuration class for map widget customization
+- Parameters: `colormap`, `figure_size`, `scatter_size`, `map_extent`, etc.
 
-#### 4. Install CrocoCamp
-```bash
-git clone git@github.com:CROCODILE-CESM/CrocoCamp.git
-cd CrocoCamp
-pip install .
-```
+**`InteractiveWidgetProfile`** - Interactive profile widget for vertical profile analysis  
+- Constructor: `InteractiveWidgetProfile(dataframe, x='obs', y='vertical', config=None)`
+- `setup()` - Initialize and display the interactive profile widget
+- Supports custom x and y axis selections for profile analysis
+- Ideal for analyzing Argo float or CTD profile comparisons
 
-#### 5. Load NCAR modules (if on NCAR systems)
-```bash
-module load nco
-```
+**`ProfileConfig`** - Configuration class for profile widget customization  
+- Parameters: `figure_size`, `marker_size`, `invert_yaxis`, etc.
 
 ## Usage
 
-### Command Line Interface
-
-Process model-observation pairs using the main CLI:
-
-```bash
-# Basic usage
-perfect-model-obs -c config.yaml
-
-# With observation trimming to model grid boundaries
-perfect-model-obs -c config.yaml --trim
-
-# Skip time matching (assumes 1:1 file correspondence)
-perfect-model-obs -c config.yaml --no-matching
-
-# Convert existing outputs to parquet only
-perfect-model-obs -c config.yaml --parquet-only
-```
-### Programmatic Usage (Class-based API)
+### Programmatic Usage (Class-based API, e.g for Jupyter notebooks)
 
 For Python scripts and Jupyter notebooks, use the class-based API:
 
@@ -143,149 +274,23 @@ required_keys = workflow.get_required_config_keys()
 workflow.run()
 ```
 
-## Observation Types Configuration
+### Command Line Interface
 
-CrocoCamp now supports automatic configuration of observation types for DART assimilation through the `use_these_obs` field in your configuration file. This feature reads observation type definitions from DART's `obs_def_ocean_mod.rst` file and automatically updates the `input.nml` file's `&obs_kind_nml` section.
-
-### Basic Usage
-
-Add the `use_these_obs` field to your `config.yaml`:
-
-```yaml
-# Basic observation types
-use_these_obs:
-  - FLOAT_TEMPERATURE
-  - FLOAT_SALINITY
-  - CTD_TEMPERATURE
-  - CTD_SALINITY
-```
-
-### ALL_<FIELD> Syntax
-
-You can use the `ALL_<FIELD>` syntax to automatically include all observation types for a specific quantity:
-
-```yaml
-use_these_obs:
-  - ALL_TEMPERATURE    # Includes all temperature-related obs types
-  - ALL_SALINITY       # Includes all salinity-related obs types  
-  - SATELLITE_SSH      # Include specific additional types
-```
-
-### Supported Field Types
-
-The `ALL_<FIELD>` syntax supports any quantity type defined in DART's obs_def_ocean_mod.rst:
-- `ALL_TEMPERATURE` - All temperature observation types (FLOAT_TEMPERATURE, CTD_TEMPERATURE, XBT_TEMPERATURE, etc.)
-- `ALL_SALINITY` - All salinity observation types (FLOAT_SALINITY, CTD_SALINITY, etc.)
-- `ALL_U_CURRENT_COMPONENT` - All U-velocity observation types
-- `ALL_V_CURRENT_COMPONENT` - All V-velocity observation types
-- `ALL_SEA_SURFACE_HEIGHT` - All sea surface height observation types
-- See DART documentation for a complete list
-
-### Example Configuration
-
-```yaml
-perfect_model_obs_dir: /path/to/DART/models/MOM6/work
-model_files_folder: /path/to/model/files
-obs_seq_in_folder: /path/to/obs_seq_files
-output_folder: /path/to/output
-
-# Observation types configuration
-use_these_obs:
-  - ALL_TEMPERATURE      # Expands to ~15 temperature obs types
-  - FLOAT_SALINITY       # Specific salinity type
-  - SATELLITE_SSH        # Sea surface height from satellites
-
-# Other configuration...
-time_window:
-  days: 5
-  hours: 0
-```
-
-### How It Works
-
-1. **Parsing**: CrocoCamp reads the DART observation definitions from:
-   `{perfect_model_obs_dir}/../../../observations/forward_operators/obs_def_ocean_mod.rst`
-
-2. **Validation**: Each observation type in your `use_these_obs` list is validated against the available types
-
-3. **Expansion**: `ALL_<FIELD>` entries are expanded to include all observation types with matching quantity (`QTY_<FIELD>`)
-
-4. **Namelist Update**: The `input.nml` file's `&obs_kind_nml` section is automatically updated with proper Fortran formatting:
-
-```fortran
-&obs_kind_nml
-   assimilate_these_obs_types = 'ARGO_TEMPERATURE'
-                                'BOTTLE_TEMPERATURE'
-                                'CTD_TEMPERATURE'
-                                'FLOAT_SALINITY'
-                                'SATELLITE_SSH'
-   evaluate_these_obs_types   = ''
-   /
-```
-
-### Error Handling
-
-If an observation type is invalid or a field expansion fails, CrocoCamp will show a warning and continue with the existing `input.nml` configuration:
-
-```
-Warning: Could not process observation types: Invalid observation type 'INVALID_TYPE'
-Continuing with existing obs_kind_nml configuration
-```
-
-
-
-## Demo
-
-### Quick Start with Demo Data
-
-To run the demo and get familiar with CrocoCamp:
+Process model-observation pairs using the main CLI:
 
 ```bash
-perfect-model-obs -c ./demo/config.yaml -t
+# Basic usage
+perfect-model-obs -c config.yaml
+
+# With observation trimming to model grid boundaries
+perfect-model-obs -c config.yaml --trim
+
+# Skip time matching (assumes 1:1 file correspondence)
+perfect-model-obs -c config.yaml --no-matching
+
+# Convert existing outputs to parquet only
+perfect-model-obs -c config.yaml --parquet-only
 ```
-
-This command uses the `-c` flag to specify the configuration file (`./demo/config.yaml`) and the `-t` flag to enable observation trimming to model grid boundaries.
-
-This command will:
-- Process demo model and observation files
-- Apply observation trimming to model grid boundaries (`-t` flag)
-- Generate output files in multiple folders:
-  - `demo/out_obs_seq_in/` - Contains obs_seq*.out files with perfect model observations (model data reinterpolated onto observation space)
-  - `demo/out_trimmed_obs_seq_in/` - Contains observation files trimmed to model grid boundaries
-  - `demo/out_parquet/` - Contains merged model-observation data in Parquet format with diagnostics
-  - `demo/input_bckp/` - Contains backup copies of DART input.nml configuration files
-
-### Exploring Results
-
-After running the demo, you can explore the results using the provided Jupyter notebook in `examples/model-obs-comparison.ipynb`.
-- This notebook demonstrates how to load and visualize the parquet datasets generated by `perfect-model-obs`
-- It provides examples of comparing model and observation data, including diagnostic values such as:
-  - `residual` (obs - model)
-  - `abs_residual` (absolute residual)
-  - `normalized_residual` (residual normalized by observation error)
-  - `squared_residual` (squared residual)
-  - `log_likelihood` (log-likelihood of model-observation fit)
-
-## Configuration
-
-Edit the provided `configs/config.yaml` to set your input, output, and model/obs paths:
-
-```yaml
-model_in_folder: /path/to/model/files/
-obs_in_folder: /path/to/obs/files/
-output_folder: /path/to/output/
-template_file: /path/to/template.nc
-static_file: /path/to/static.nc
-ocean_geometry: /path/to/ocean_geometry.nc
-```
-
-## Examples
-
-See the `examples/` and `configs/` folders for notebooks and reference configurations, including:
-- `examples/model-obs-comparison.ipynb` - Model-observation comparison examples
-- `configs/config.yaml` - Example configuration file
-- `configs/input.nml` - Example DART namelist file
-
 ---
 
-**For more details, see the full documentation or open an issue.**
+**For any questions, please open an issue.**

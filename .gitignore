@@ -12,7 +12,15 @@ dart_log.nml
 dart_log.out
 input.nml
 input.nml.backup
+perfect_model_obs.log
 
 # demo's input and output folders
 demo/in*
 demo/out*
+
+# CrocoLake and datasets
+CrocoLake/
+2025_Crocodile_tutorial
+
+# config files
+install/envpaths.sh

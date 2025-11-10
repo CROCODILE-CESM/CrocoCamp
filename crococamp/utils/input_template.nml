@@ -8,25 +8,26 @@
 &perfect_model_obs_nml
    read_input_state_from_file = .true.,
    single_file_in             = .false.
-   input_state_files          = "/path/to/in_mom6/mom6.nc",
+   input_state_files          = "/path/to/mom6/files/mom6.nc",
+
    write_output_state_to_file = .false.,
    single_file_out            = .false.
-   output_state_files         = "/path/to/out/perfect_output_00.nc",
+   output_state_files         = "/path/to/output/perfect_output.nc",
    output_interval            = 1,
 
    async                      = 0,
-   adv_ens_command            = "no_advance_script",
+   adv_ens_command            = "do not advance model",
 
-   obs_seq_in_file_name       = "/path/to/trimmed_obs_in/trimmed_obs_seq_00.in",
-   obs_seq_out_file_name      = "/path/to/out/obs_seq_0029.out",
-   init_time_days             = 151605,
-   init_time_seconds          = 61,
+   obs_seq_in_file_name       = "/path/to/obs_seq_in/file/obs_seq.in",
+   obs_seq_out_file_name      = "/path/to/output/obs_seq_0009.out",
+   init_time_days             = 149511,
+   init_time_seconds          = 43200,
    first_obs_days             = -1,
    first_obs_seconds          = -1,
    last_obs_days              = -1,
    last_obs_seconds           = -1,
 
-   trace_execution            = .true.,
+   trace_execution            = .false.,
    output_timestamps          = .false.,
    print_every_nth_obs        = 1000,
    output_forward_op_errors   = .false.,
@@ -35,10 +36,10 @@
 
 &filter_nml
    single_file_in               = .false.,
-   input_state_files 		= ''
+   input_state_files            = ''
    input_state_file_list        = 'filter_input_list.txt'
 
-   stages_to_write  = 'preassim', 'analysis', 'output'
+   stages_to_write  = 'output'
 
    single_file_out              = .false.,
    output_state_files           = ''
@@ -50,7 +51,7 @@
    output_sd                    = .true.
    write_all_stages_at_end      = .false.
 
-   ens_size                     = 20,
+   ens_size                     = 3,
    num_groups                   = 1,
    perturb_from_single_instance = .false.,
    perturbation_amplitude       = 0.2,
@@ -62,7 +63,7 @@
    obs_sequence_in_name         = "obs_seq.out",
    obs_sequence_out_name        = "obs_seq.final",
    num_output_obs_members       = 20,
- init_time_days = '149749'
+   init_time_days               = -1,
    init_time_seconds            = -1,
    first_obs_days               = -1,
    first_obs_seconds            = -1,
@@ -100,7 +101,7 @@
    distribute_mean                 = .false.
    output_localization_diagnostics = .false.,
    localization_diagnostics_file   = 'localization_diagnostics',
-   print_every_nth_obs             = 10000
+   print_every_nth_obs             = 1000
    /
 
 &cov_cutoff_nml
@@ -119,32 +120,23 @@
    /
 
 &obs_kind_nml
-   assimilate_these_obs_types = 'FLOAT_SALINITY'
-                                'FLOAT_TEMPERATURE'              
-                                'GLIDER_SALINITY'                
-                                'GLIDER_TEMPERATURE'             
-                                'MOORING_SALINITY'               
-                                'MOORING_TEMPERATURE'            
-                                'BOTTLE_SALINITY'                
-                                'BOTTLE_TEMPERATURE'             
-                                'CTD_SALINITY'                   
-                                'CTD_TEMPERATURE'                
-                                'XBT_TEMPERATURE'                
-                                'APB_SALINITY'                   
-                                'APB_TEMPERATURE'  
+   assimilate_these_obs_types = 'BOTTLE_SALINITY'
+                                'BOTTLE_TEMPERATURE'
+                                'FLOAT_SALINITY'
+                                'FLOAT_TEMPERATURE'
    evaluate_these_obs_types   = ''
    /
 
 &model_nml
-   assimilation_period_days     = 5
-   assimilation_period_seconds  = 1
-   template_file              = "/path/to/in_mom6/mom6.nc",
-   static_file                = "/path/to/reference_nc/mom6.static.nc",
-   ocean_geometry             = "/path/to/reference_nc/mom6.ocean_geometry.nc",
-   use_pseudo_depth = .true.,
-   layer_name = 'zl',
-   model_state_variables        = 'so ', 'QTY_SALINITY             ', 'UPDATE',
-                                  'thetao ', 'QTY_POTENTIAL_TEMPERATURE', 'UPDATE',
+   assimilation_period_days   = 5,
+   assimilation_period_seconds= 0,
+   template_file              = "/path/to/mom6/files/mom6.nc",
+   static_file                = "/path/to/mom6/files/static_file.nc",
+   ocean_geometry             = "/path/to/mom6/files/ocean_geometry.nc",
+   use_pseudo_depth           = .true.,
+   layer_name                 = "zl",
+   model_state_variables      = 'so ', 'QTY_SALINITY             ', 'UPDATE',
+                                'thetao ', 'QTY_POTENTIAL_TEMPERATURE', 'UPDATE',
    /
 
 &utilities_nml
@@ -196,7 +188,7 @@
    /
 
 &model_mod_check_nml
- input_state_files = '/glade/derecho/scratch/kboden/Truth/reference/0119-01-04.nc'
+   input_state_files    = "/path/to/mom6/files/mom6.nc",
    output_state_files   = 'mmc_output.nc'
    test1thru            = 7
    run_tests            = 1,2,3,4,7
@@ -223,5 +215,3 @@
 &location_nml
    horiz_dist_only             = .true.
 /
-
-

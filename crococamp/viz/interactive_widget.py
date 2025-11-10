@@ -18,7 +18,7 @@ class InteractiveWidget(ABC):
     - Abstract methods for widget-specific implementation
     """
 
-    def __init__(self, dataframe: Union[pd.DataFrame, dd.DataFrame], config=None):
+    def __init__(self, dataframe: Union[pd.DataFrame, dd.DataFrame], viz_config=None):
         """Initialize the interactive widget.
 
         Args:
@@ -26,8 +26,21 @@ class InteractiveWidget(ABC):
             config: Configuration instance for customization (optional)
         """
         self.df = dataframe
-        self.config = config
+        self.config = viz_config
         self.output = None
+        self.units_dict = {}
+        self.units_dict['_TEMPERATURE'] = 'Celsius'
+        self.units_dict['_SALINITY'] = 'kg/kg'
+        self.units_dims_dict = {}
+        self.units_dims_dict['interpolated_model'] = ''
+        self.units_dims_dict['interpolated_model_QC'] = 'remove'
+        self.units_dims_dict['obs'] = ''
+        self.units_dims_dict['obs_err_var'] = ''
+        self.units_dims_dict['difference'] = ''
+        self.units_dims_dict['abs_difference'] = ''
+        self.units_dims_dict['squared_difference'] = '^2'
+        self.units_dims_dict['normalized_difference'] = 'remove'
+        self.units_dims_dict['log_likelihood'] = 'remove'
 
     def _setup_widget_workflow(self):
         """Execute the standard widget setup workflow."""
@@ -105,3 +118,26 @@ class InteractiveWidget(ABC):
     @abstractmethod
     def _create_widget_layout(self) -> widgets.Widget:
         """Create the widget layout for display."""
+
+    def get_units(self,obs_type,col_name):
+        base_units = None
+        dim_units = None
+        units = None
+        for key in self.units_dict:
+            if obs_type.endswith(key):
+                base_units = self.units_dict[key]
+                break
+        if base_units is None:
+            print(f"Warning: no unit found for {obs_type} in {self.units_dict}.")
+        for key in self.units_dims_dict:
+            if col_name == key:
+                dim_units = self.units_dims_dict[key]
+                break
+        if dim_units == 'remove':
+            units = '-'
+        elif dim_units is None:
+            print(f"Warning: no unit dimension found for {col_name} in {self.units_dims_dict}.")
+        else:
+            units = base_units + dim_units
+
+        return units

@@ -7,13 +7,23 @@ from typing import Any, Dict, List, Tuple
 import yaml
 
 
-def resolve_path(path: str, config_file: str) -> str:
-    """Resolve path to absolute, using config_file location as base for relative paths."""
+def resolve_path(path: str, relative_to: str) -> str:
+    """Resolve path to absolute, using relative_to location as base for relative paths."""
+    path = os.path.expandvars(path)
     if os.path.isabs(path):
-        return path
-    config_dir = os.path.dirname(os.path.abspath(config_file))
-    return os.path.abspath(os.path.join(config_dir, path))
+        return os.path.normpath(path)
+    if relative_to is not None:
+        print("Path is not absolute but no base for relative paths was provided, using './'")
+        relative_to = "./"
+    relative_dir = os.path.dirname(os.path.abspath(relative_to))
+    return os.path.normpath(os.path.abspath(os.path.join(relative_dir, path)))
 
+def resolve_config_paths(config: Dict[str,any], relative_to: str = None) -> Dict[str,any]:
+    """Resolve paths in config settings."""
+    for key in config:
+        if isinstance(config[key], str) and key != "layer_name":
+            config[key] = resolve_path(config[key], relative_to)
+    return config
 
 def read_config(config_file: str) -> Dict[str, Any]:
     """Read configuration from YAML file."""
@@ -23,11 +33,8 @@ def read_config(config_file: str) -> Dict[str, Any]:
     try:
         with open(config_file, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
-        for key in config:
-            if isinstance(config[key], str):
-                config[key] = resolve_path(config[key], config_file)
 
-        config["input_nml"] = os.path.join(config['perfect_model_obs_dir'], "input.nml")
+        config = resolve_config_paths(config, config_file)
         config = convert_time_window(config)
         return config
     except yaml.YAMLError as e:
@@ -133,7 +140,7 @@ def clear_folder(folder_path: str) -> None:
         try:
             if os.path.isfile(file_path) or os.path.islink(file_path):
                 os.remove(file_path)
-                print(f'Deleted file: {file_path}')
+                print(f'  Deleted file: {file_path}')
         except OSError as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
 

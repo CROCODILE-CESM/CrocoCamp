@@ -37,7 +37,9 @@ class Workflow(ABC):
         config = config_utils.read_config(config_file)
         
         # Override config with any provided kwargs
-        config.update(kwargs)
+        if kwargs:
+            config.update(kwargs)
+            config = config_utils.resolve_config_paths(config)
         
         return cls(config)
     
@@ -94,3 +96,4 @@ class Workflow(ABC):
         print("Configuration:")
         for key, value in self.config.items():
             print(f"  {key}: {value}")
+

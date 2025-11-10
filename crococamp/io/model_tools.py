@@ -46,8 +46,7 @@ def get_model_boundaries(model_file: str, margin: float = 0.0) -> Tuple[Polygon,
         lon_min, lat_min = hull_points.min(axis=0)
         lon_max, lat_max = hull_points.max(axis=0)
 
-        print(f"Model grid convex hull bounding box (lon, lat): "
+        print(f"    Model grid convex hull bounding box (lon, lat): "
               f"[{lon_min:.2f}, {lon_max:.2f}], [{lat_min:.2f}, {lat_max:.2f}]")
-        print(f"Convex hull has {len(hull_points)} vertices")
 
         return hull_polygon, hull_points
