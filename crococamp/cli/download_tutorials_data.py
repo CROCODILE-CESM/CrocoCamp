@@ -100,8 +100,23 @@ def unzip_file(zip_filepath, extract_to):
     extract_to (str)    --  Directory to extract the zip file to.
     """
 
-    with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
-        zip_ref.extractall(extract_to)
+    with zipfile.ZipFile(zip_filepath, 'r') as zip_ref:
+        members = zip_ref.infolist()
+        total_size = sum(m.file_size for m in members)  # Total archive size (uncompressed)
+        with tqdm(total=total_size, unit='B', unit_scale=True, desc='Extracting') as pbar:
+            for member in members:
+                dest_path = os.path.join(extract_to, member.filename)
+                if member.is_dir():
+                    os.makedirs(dest_path, exist_ok=True)
+                    continue
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                with zip_ref.open(member) as source, open(dest_path, 'wb') as target:
+                    while True:
+                        chunk = source.read(1024 * 1024)  # 1MB at a time
+                        if not chunk:
+                            break
+                        target.write(chunk)
+                        pbar.update(len(chunk))
 
 #------------------------------------------------------------------------------#
 def main():

@@ -29,5 +29,5 @@ echo "Registering Jupyter kernel for $CONDA_ENV_NAME..."
 $CONDA_ENV_PATH/bin/python -m ipykernel install --user --name="$CONDA_ENV_NAME" --display-name="Python ($CONDA_ENV_NAME)"
 
 if [[ "$TUTORIAL" -eq 1 ]]; then
-    ./tutorials_download.sh
+    conda run -n "$CONDA_ENV_NAME" --no-capture-output ./tutorials_download.sh
 fi
