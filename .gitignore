@@ -12,6 +12,7 @@ dart_log.nml
 dart_log.out
 input.nml
 input.nml.backup
+perfect_model_obs.log
 
 # demo's input and output folders
 demo/in*
