@@ -120,6 +120,8 @@ class InteractiveWidget(ABC):
         """Create the widget layout for display."""
 
     def get_units(self,obs_type,col_name):
+        """Returns the units of the selected variable"""
+        
         base_units = None
         dim_units = None
         units = None

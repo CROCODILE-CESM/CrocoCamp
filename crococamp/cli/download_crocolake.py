@@ -33,6 +33,7 @@ urls["1010_BGC_ARGO-CLOUD-DEV"] = "https://whoi-my.sharepoint.com/:u:/g/personal
 
 #------------------------------------------------------------------------------#
 def get_db_codename(db_name, db_type, qc, dev=False):
+    """Return codename of dataset as used in the backend"""
 
     if db_name=="CROCOLAKE":
         if not qc:
