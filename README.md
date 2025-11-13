@@ -15,6 +15,7 @@
 - [Usage](#usage)
     - [Programmatic Usage (Class-based API, e.g for Jupyter notebooks)](#programmatic-usage-class-based-api-eg-for-jupyter-notebooks)
     - [Command Line Interface](#command-line-interface)
+- [How to Cite](#how-to-cite)
       
 ## Features
 
@@ -291,6 +292,28 @@ perfect-model-obs -c config.yaml --no-matching
 # Convert existing outputs to parquet only
 perfect-model-obs -c config.yaml --parquet-only
 ```
+
+## How to Cite
+
+If you use CrocoCamp in your research, please cite it as:
+
+Milanese, E. (2025). CrocoCamp. Zenodo. https://doi.org/10.5281/zenodo.17336480
+
+For reproducibility and traceability, it is recommended that in your work you also specify the version you used (e.g. v0.2.0); each version also has a unique doi in Zenodo.
+
+### BibTeX Entry
+
+```bibtex
+@software{crococamp,
+  author       = {Milanese, Enrico},
+  title        = {CrocoCamp},
+  year         = {2025},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.17336480},
+  url          = {https://doi.org/10.5281/zenodo.17336480}
+}
+```
+
 ---
 
 **For any questions, please open an issue.**

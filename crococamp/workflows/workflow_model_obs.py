@@ -488,8 +488,8 @@ class WorkflowModelObs(workflow.Workflow):
                 qc_col[0]:perf_model_col_QC
             })
 
-        # Generate unique hash for merging
         def compute_hash(df: pd.DataFrame, cols: List[str], hash_col: str = "hash") -> pd.DataFrame:
+            """Generate unique hash for merging"""
             concat = df[cols].astype(str).agg('-'.join, axis=1)
             df[hash_col] = pd.util.hash_pandas_object(concat, index=False).astype('int64')
             return df

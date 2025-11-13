@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-11-13
+- CrocoCamp now runs on any machine (not on NCAR's HPC only)
+- `install.sh --tutorial` downloads the data necessary to run the tutorials locally
+- Dedicated installer for use on NCAR machines is provided in `install_NCAR.sh`
+
 ## [0.1.1] - 2025-10-16
 - Bugfix: fixes bug that sometimes prevented the interactive map from being
   updated when changing the plotted variable
