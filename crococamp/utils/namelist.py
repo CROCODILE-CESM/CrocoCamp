@@ -116,7 +116,7 @@ class Namelist():
                 if dict_format == 'triplet':
                     # Format as triplets: 'key', 'value', 'UPDATE'
                     padded_val = f"{val}".ljust(25)  # Match the padding from original
-                    first_line = f"   {param.ljust(27)}= '{key} ', '{padded_val}', 'UPDATE',"
+                    first_line = f"   {param.ljust(27)}= '{key} ', '{padded_val}', 'NA', 'NA', 'UPDATE',"
                 else:
                     # Format as key-value pairs: 'key', 'value'
                     first_line = f"   {param.ljust(27)}= '{key}', '{val}',"
@@ -128,7 +128,7 @@ class Namelist():
                 for key, val in items[1:]:
                     if dict_format == 'triplet':
                         padded_val = f"{val}".ljust(25)
-                        line = f"{indent}'{key} ', '{padded_val}', 'UPDATE',"
+                        line = f"{indent}'{key} ', '{padded_val}', 'NA', 'NA', 'UPDATE',"
                     else:
                         line = f"{indent}'{key}', '{val}',"
                     lines.append(line)
