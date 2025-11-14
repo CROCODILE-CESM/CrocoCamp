@@ -21,6 +21,9 @@ class Workflow(ABC):
             config: Configuration dictionary containing workflow parameters
         """
         self.config = config
+        if 'ocean_model' not in self.config:
+            raise ValueError("ocean_model value not found in config file.")
+        self.ocean_model = self.config['ocean_model']
         self._validate_config()
 
     @classmethod
