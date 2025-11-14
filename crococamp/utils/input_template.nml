@@ -130,13 +130,6 @@
 &model_nml
    assimilation_period_days   = 5,
    assimilation_period_seconds= 0,
-   template_file              = "/path/to/mom6/files/mom6.nc",
-   static_file                = "/path/to/mom6/files/static_file.nc",
-   ocean_geometry             = "/path/to/mom6/files/ocean_geometry.nc",
-   use_pseudo_depth           = .true.,
-   layer_name                 = "zl",
-   model_state_variables      = 'so ', 'QTY_SALINITY             ', 'UPDATE',
-                                'thetao ', 'QTY_POTENTIAL_TEMPERATURE', 'UPDATE',
    /
 
 &utilities_nml
