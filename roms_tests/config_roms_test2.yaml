@@ -47,5 +47,5 @@ time_window:
 # ROMS Rutgers variable naming and type
 variables:
   salt: QTY_SALINITY
-  temp: QTY_POTENTIAL_TEMPERATURE
+  temp: QTY_TEMPERATURE
   zeta: QTY_SEA_SURFACE_HEIGHT
