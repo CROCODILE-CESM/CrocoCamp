@@ -17,8 +17,8 @@ if [ "$DART_ROOT_PATH" = "/path/to/DART/" ]; then
         return 1  # Use exit 1 if not sourced
     fi        
 fi
-# Define conda environment name
-export CONDA_ENV_NAME="crococamp"
+# Define conda environment name (if not defined already)
+export CONDA_ENV_NAME="${CONDA_ENV_NAME:-crococamp}"
 
 #### DO NOT MODIFY BELOW THIS LINE ####
 # Set up paths
