@@ -1,8 +1,22 @@
 #!/usr/bin/env sh
 
-# Define path to root of your DART installation
+# Define path to root of your DART installation (query user if the value is not updated)
 export DART_ROOT_PATH="/path/to/DART/"
-
+if [ "$DART_ROOT_PATH" = "/path/to/DART/" ]; then
+    if [ -t 0 ]; then  # Terminal input is available
+        printf "DART_ROOT_PATH is unset or placeholder. Please provide the DART root path: "
+        read input_path
+        if [ -n "$input_path" ]; then
+            export DART_ROOT_PATH="$input_path"
+        else
+            echo "No value provided. Exiting."
+            exit 1
+        fi
+    else
+        echo "DART_ROOT_PATH is unset and no terminal available for input."
+        return 1  # Use exit 1 if not sourced
+    fi        
+fi
 # Define conda environment name
 export CONDA_ENV_NAME="crococamp"
 
