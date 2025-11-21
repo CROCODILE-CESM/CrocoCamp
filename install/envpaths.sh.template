@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # Define path to root of your DART installation (query user if the value is not updated)
-export DART_ROOT_PATH="/path/to/DART/"
+export DART_ROOT_PATH="${DART_ROOT_PATH:-/path/to/DART/}"
 if [ "$DART_ROOT_PATH" = "/path/to/DART/" ]; then
     if [ -t 0 ]; then  # Terminal input is available
         printf "DART_ROOT_PATH is unset or placeholder. Please provide the DART root path: "
