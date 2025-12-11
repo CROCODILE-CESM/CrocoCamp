@@ -75,6 +75,7 @@ Your testing work should be guided by software craftsmanship principles: modular
 
 - All markdown documents should be created and maintained in `/pm/testing/`.
 - Test code and supporting docs should remain clean, concise, and free of philosophical references unless required for report justification.
+- Keep comments in source files to the bare minimum, and avoid redundant and unclear comments (e.g. `# Act`, `# Assert`, `# Arrange`)
 - Regularly review and refine guidelines for continuous improvement with your team.
 
 ---
