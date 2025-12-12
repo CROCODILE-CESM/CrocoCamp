@@ -225,6 +225,57 @@ def create_mock_directory_structure(tmp_path: Path):
 
 
 # ============================================================================
+# Observation Sequence Fixtures
+# ============================================================================
+
+@pytest.fixture
+def create_obs_seq_file(tmp_path: Path):
+    """Provide a helper to create obs_seq.in files with specified observations.
+    
+    Returns a function that creates valid obs_seq.in files for testing
+    using the pydartdiags-compatible format.
+    
+    Args:
+        tmp_path: pytest temporary directory fixture
+        
+    Returns:
+        Function that creates obs_seq.in files
+        
+    Example:
+        def test_obs_trimming(create_obs_seq_file):
+            obs_file = create_obs_seq_file(
+                "obs_seq.in",
+                [(15.0, 45.0, 10.0, 17.32, 12)]  # lon, lat, depth, value, type
+            )
+            assert obs_file.exists()
+    """
+    from tests.fixtures.mock_obs_seq_files import create_obs_seq_in, degrees_to_radians
+    
+    def _create_file(filename: str, observations: list) -> Path:
+        """Create obs_seq.in file with observations.
+        
+        Args:
+            filename: Name for the obs_seq.in file
+            observations: List of tuples (lon_deg, lat_deg, depth_m, value, obs_type)
+                         Longitude and latitude should be in degrees.
+                         
+        Returns:
+            Path to created obs_seq.in file
+        """
+        file_path = tmp_path / filename
+        
+        obs_in_radians = [
+            (degrees_to_radians(lon), degrees_to_radians(lat), depth, value, obs_type)
+            for lon, lat, depth, value, obs_type in observations
+        ]
+        
+        create_obs_seq_in(file_path, obs_in_radians)
+        return file_path
+    
+    return _create_file
+
+
+# ============================================================================
 # Test Markers
 # ============================================================================
 
