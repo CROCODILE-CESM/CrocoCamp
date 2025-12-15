@@ -1,0 +1,6 @@
+# Configuration with Invalid YAML Syntax
+# Missing colon after 'model_files_folder'
+
+model_files_folder /tmp/test/model_files
+obs_seq_in_folder: /tmp/test/obs_seq_in
+output_folder: /tmp/test/output

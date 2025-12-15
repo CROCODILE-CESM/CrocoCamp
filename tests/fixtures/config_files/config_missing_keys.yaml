@@ -1,0 +1,12 @@
+# Configuration with Missing Required Keys
+# Missing: template_file, static_file, ocean_geometry
+
+model_files_folder: /tmp/test/model_files
+obs_seq_in_folder: /tmp/test/obs_seq_in
+output_folder: /tmp/test/output
+perfect_model_obs_dir: /tmp/test/dart_work
+parquet_folder: /tmp/test/parquet
+
+time_window:
+  days: 1
+  hours: 0

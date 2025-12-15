@@ -1,0 +1,20 @@
+# Configuration with Environment Variables
+# Tests environment variable expansion
+
+model_files_folder: $WORK/model_files
+obs_seq_in_folder: $WORK/obs_seq_in
+output_folder: $WORK/output
+template_file: $HOME/data/template.nc
+static_file: $HOME/data/static.nc
+ocean_geometry: $HOME/data/ocean_geometry.nc
+perfect_model_obs_dir: $WORK/dart/work
+parquet_folder: $WORK/parquet
+
+time_window:
+  days: 1
+  hours: 12
+  minutes: 30
+  seconds: 0
+  weeks: 0
+  months: 0
+  years: 0

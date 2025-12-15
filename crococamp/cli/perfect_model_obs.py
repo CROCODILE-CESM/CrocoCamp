@@ -3,7 +3,6 @@
 import argparse
 import sys
 
-from ..utils.config import read_config, validate_config_keys
 from ..workflows.workflow_model_obs import WorkflowModelObs
 
 

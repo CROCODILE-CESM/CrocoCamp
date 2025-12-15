@@ -1,0 +1,20 @@
+# Minimal Valid Configuration
+# This config contains only required keys with minimal valid values
+
+model_files_folder: /tmp/test/model_files
+obs_seq_in_folder: /tmp/test/obs_seq_in
+output_folder: /tmp/test/output
+template_file: /tmp/test/template.nc
+static_file: /tmp/test/static.nc
+ocean_geometry: /tmp/test/ocean_geometry.nc
+perfect_model_obs_dir: /tmp/test/dart_work
+parquet_folder: /tmp/test/parquet
+
+time_window:
+  days: 1
+  hours: 0
+  minutes: 0
+  seconds: 0
+  weeks: 0
+  months: 0
+  years: 0
