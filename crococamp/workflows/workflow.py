@@ -42,7 +42,6 @@ class Workflow(ABC):
         # Override config with any provided kwargs
         if kwargs:
             config.update(kwargs)
-            config = config_utils.resolve_config_paths(config)
         
         return cls(config)
     

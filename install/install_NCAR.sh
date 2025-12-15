@@ -24,7 +24,18 @@ chmod +x $CONDA_ENV_PATH/etc/conda/activate.d/load_modules.sh
 
 # load environmental paths
 CONDA_SCRIPTS_PATH=$CONDA_ENV_PATH/etc/conda/activate.d/
-cp ./envpaths_NCAR.sh $CONDA_SCRIPTS_PATH
+
+# copy resolve environmental variables to conda's activate path
+cat > "${CONDA_SCRIPTS_PATH}envpaths.sh" << EOF
+export DART_ROOT_PATH="$DART_ROOT_PATH"
+export CONDA_ENV_NAME="$CONDA_ENV_NAME"
+export CROCOLAKE_OBS_CONV_PATH="$CROCOLAKE_OBS_CONV_PATH"
+export PYTHONPATH="$PYTHONPATH"
+export CROCOCAMP_PATH="$CROCOCAMP_PATH"
+export CROCOLAKE_PATH="$CROCOLAKE_PATH"
+export TUTORIAL_DATA_PATH="$TUTORIAL_DATA_PATH"
+EOF
+
 echo "source \"${CONDA_SCRIPTS_PATH}envpaths_NCAR.sh\"" > $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
 chmod +x $CONDA_ENV_PATH/etc/conda/activate.d/load_paths.sh
 

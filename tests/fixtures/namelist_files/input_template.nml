@@ -1,0 +1,20 @@
+&model_nml
+   assimilation_period_days    = 1,
+   assimilation_period_seconds = 0,
+   template_file               = "/path/to/template.nc",
+   static_file                 = "/path/to/static.nc",
+/
+
+&perfect_model_obs_nml
+   input_state_files           = "/path/to/model_input.nc",
+   output_state_files          = "/path/to/model_output.nc",
+   obs_seq_in_file_name        = "/path/to/obs_seq.in",
+   obs_seq_out_file_name       = "/path/to/obs_seq.out",
+   init_time_days              = 149021,
+   init_time_seconds           = 0,
+/
+
+&obs_kind_nml
+   assimilate_these_obs_types  = 'FLOAT_TEMPERATURE',
+                                  'FLOAT_SALINITY',
+/

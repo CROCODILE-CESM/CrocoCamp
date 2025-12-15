@@ -7,12 +7,12 @@ from typing import Any, Dict, List, Tuple
 import yaml
 
 
-def resolve_path(path: str, relative_to: str) -> str:
+def resolve_path(path: str, relative_to: str = None) -> str:
     """Resolve path to absolute, using relative_to location as base for relative paths."""
     path = os.path.expandvars(path)
     if os.path.isabs(path):
         return os.path.normpath(path)
-    if relative_to is not None:
+    if relative_to is None:
         print("Path is not absolute but no base for relative paths was provided, using './'")
         relative_to = "./"
     relative_dir = os.path.dirname(os.path.abspath(relative_to))

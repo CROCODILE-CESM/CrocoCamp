@@ -3,7 +3,11 @@
 import numpy as np
 import pydartdiags.obs_sequence.obs_sequence as obsq
 from shapely.geometry import Polygon
-from shapely.vectorized import contains
+
+try:
+    from shapely import contains_xy
+except ImportError:
+    from shapely.vectorized import contains as contains_xy
 
 
 def trim_obs_seq_in(obs_in_file: str, hull_polygon: Polygon, hull_points: np.ndarray, trimmed_obs_file: str) -> None:
@@ -31,7 +35,7 @@ def trim_obs_seq_in(obs_in_file: str, hull_polygon: Polygon, hull_points: np.nda
     print(f"           Number of observations before filtering to convex hull: {len(obs_seq_in.df)}")
 
     # Create a mask for observations inside the convex hull
-    within_hull_mask = contains(hull_polygon, obs_lon, obs_lat)
+    within_hull_mask = contains_xy(hull_polygon, obs_lon, obs_lat)
     if not np.any(within_hull_mask):
         raise ValueError("No observations found within the convex hull.")
 
