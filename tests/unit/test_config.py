@@ -822,3 +822,51 @@ class TestValidateConfigKeys:
 # Mark all tests in this module as unit tests
 # ============================================================================
 pytestmark = pytest.mark.unit
+
+
+class TestCheckOrCreateFolderEdgeCases:
+    """Additional tests for check_or_create_folder error paths."""
+    
+    def test_check_or_create_folder_mkdir_error(self, tmp_path, monkeypatch):
+        """Test check_or_create_folder handles OSError during folder creation."""
+        target = tmp_path / "new_folder"
+        
+        def mock_makedirs(*args, **kwargs):
+            raise OSError("Permission denied")
+        
+        monkeypatch.setattr(os, "makedirs", mock_makedirs)
+        
+        with pytest.raises(OSError, match="Could not create"):
+            config.check_or_create_folder(str(target), "test_folder")
+
+
+class TestParseObsDefOceanModEdgeCases:
+    """Additional tests for parse_obs_def_ocean_mod error paths."""
+    
+    def test_parse_obs_def_ocean_mod_ioerror(self, tmp_path, monkeypatch):
+        """Test parse_obs_def_ocean_mod handles IOError during file reading."""
+        rst_file = tmp_path / "obs_def.rst"
+        rst_file.write_text("! BEGIN DART PREPROCESS TYPE DEFINITIONS\n! END DART PREPROCESS TYPE DEFINITIONS")
+        
+        def mock_open(*args, **kwargs):
+            raise IOError("Cannot read file")
+        
+        monkeypatch.setattr("builtins.open", mock_open)
+        
+        with pytest.raises(IOError, match="Could not read RST file"):
+            config.parse_obs_def_ocean_mod(str(rst_file))
+    
+    def test_parse_obs_def_ocean_mod_wrong_format(self, tmp_path):
+        """Test parse_obs_def_ocean_mod raise error if malformed."""
+        rst_content = """
+! BEGIN DART PREPROCESS TYPE DEFINITIONS
+FLOAT_TEMPERATURE, QTY_TEMPERATURE, COMMON_CODE
+INVALID_LINE
+FLOAT_SALINITY, QTY_SALINITY, COMMON_CODE
+! END DART PREPROCESS TYPE DEFINITIONS
+"""
+        rst_file = tmp_path / "obs_def.rst"
+        rst_file.write_text(rst_content)
+        
+        with pytest.raises(ValueError, match="No observation type definitions found in"):
+            config.parse_obs_def_ocean_mod(str(rst_file))
