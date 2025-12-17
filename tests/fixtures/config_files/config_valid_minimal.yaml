@@ -1,6 +1,8 @@
 # Minimal Valid Configuration
 # This config contains only required keys with minimal valid values
 
+ocean_model: my_ocean_model
+
 model_files_folder: /tmp/test/model_files
 obs_seq_in_folder: /tmp/test/obs_seq_in
 output_folder: /tmp/test/output
