@@ -68,6 +68,9 @@ class WorkflowModelObs(workflow.Workflow):
                 'perfect_model_obs_dir', 
                 'parquet_folder'
             ]
+
+        else:
+            raise ValueError("ocean_model provided does not have required config keys.")
     
     def run(self, trim_obs: bool = True, no_matching: bool = False,
             force_obs_time: bool = False, parquet_only: bool = False,
