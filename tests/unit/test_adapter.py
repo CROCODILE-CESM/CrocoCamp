@@ -2,6 +2,8 @@
 
 import os
 import numpy as np
+import pandas as pd
+from pandas.testing import assert_frame_equal
 import pytest
 from pathlib import Path
 from typing import Any, Dict, List
@@ -154,3 +156,37 @@ class TestModelAdapterROMS:
         model_nc = tmp_path / "model.nc"
         with model_adapter.open_dataset_ctx(model_nc) as ds:
             assert "time" in ds.coords
+
+    def test_convert_units(self):
+        """Test convert_units updates salinity values"""
+
+        obs_types = [
+            "BOTTLE_SALINITY",
+            "ARGO_SALINITY",
+            "SALINITY",
+            "TEMPERATURE",
+            "ARGO_TEMPERATURE",
+            "SALTY"
+        ]
+
+        obs_values = np.array([30*1e3, 33*1e3, 35.1*1e3, 14, 16.7, 49])
+        interpolated = obs_values + 0.023
+        mock_df = pd.DataFrame({
+            'interpolated_model': interpolated,
+            'obs': obs_values,
+            'type': obs_types
+        })
+
+        target_values = np.array([30, 33, 35.1, 14, 16.7, 49])
+
+        target_df = pd.DataFrame({
+            'interpolated_model': interpolated,
+            'obs': target_values,
+            'type': obs_types
+        })
+ 
+        
+        model_adapter = create_model_adapter("roms")
+        df = model_adapter.convert_units(mock_df)
+
+        assert_frame_equal(mock_df, df)
