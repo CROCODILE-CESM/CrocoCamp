@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 from ..utils import config as config_utils
-
+from ..models.registry import create_model_adapter
 
 class Workflow(ABC):
     """Base class for all CrocoCamp workflows.
@@ -21,6 +21,9 @@ class Workflow(ABC):
             config: Configuration dictionary containing workflow parameters
         """
         self.config = config
+        self.model_adapter = create_model_adapter(
+            ocean_model=config.ocean_model,
+        )
         self._validate_config()
 
     @classmethod
@@ -48,23 +51,10 @@ class Workflow(ABC):
         Subclasses should override this method to provide specific validation.
         """
 
-        self.ocean_model = self.get_ocean_model()
         required_keys = self.get_required_config_keys()
         if required_keys:
             config_utils.validate_config_keys(self.config, required_keys)
 
-    def get_ocean_model(self) -> str:
-        """Return ocean model string from config
-
-        Returns:
-           ocean_model name (str)
-        """
-
-        if 'ocean_model' not in self.config:
-            raise ValueError("ocean_model value not found in config file.")
-        
-        return self.config['ocean_model']
-    
     @abstractmethod
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys.

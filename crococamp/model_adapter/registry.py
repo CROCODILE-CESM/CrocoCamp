@@ -11,7 +11,7 @@ _ADAPTERS: dict[str, Type[BaseModelAdapter]] = {
     "roms": ModelAdapterROMS,
 }
 
-def create_adapter(ocean_model: str, **kwargs) -> BaseModelAdapter:
+def create_model_adapter(ocean_model: str, **kwargs) -> BaseModelAdapter:
     if ocean_model is None:
         raise ValueError("ocean_model is required (e.g. 'MOM6' or 'ROMS').")
 
