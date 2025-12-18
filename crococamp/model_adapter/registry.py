@@ -4,11 +4,9 @@ from typing import Type
 
 from .model_adapter import ModelAdapter
 from .model_adapter_MOM6 import ModelAdapterMOM6
-from .model_adapter_roms import ModelAdapterROMS
 
 _ADAPTERS: dict[str, Type[BaseModelAdapter]] = {
     "mom6": ModelAdapterMOM6,
-    "roms": ModelAdapterROMS,
 }
 
 def create_model_adapter(ocean_model: str, **kwargs) -> BaseModelAdapter:

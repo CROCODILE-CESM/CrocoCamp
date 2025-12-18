@@ -1,5 +1,9 @@
 """ModelAdapter class to normalize MOM6 model input."""
 
+from typing import Any, Dict, List
+import dask.dataframe as dd
+import xarray as xr
+
 from . import model_adapter
 
 class ModelAdapterMOM6(model_adapter.ModelAdapter):
@@ -11,9 +15,8 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
     def __init__(self) -> None:
 
         # Assign time_variable_name
-        return False
+        return 
 
-    @abstractmethod
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys.
         
@@ -30,58 +33,52 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
             'parquet_folder'
         ]
 
-    @abstractmethod
     def validate_run_arguments(self) -> List[str]:
         """Validate that model can use provided arguments specified with
-        workflow.run()
-        
+            workflow.run()
+            
         Raise:
             ValueError if provided argument is not compatible and is set to True
             Warning if provided argument is not compatible but is set to False
 
         """
-    
+        
         return False
 
-    @abstractmethod
     def get_common_model_keys(self) -> List[str]:
         """Return list of keys that are common to all input.nml files for this
-        model
-        
+            model
+            
         Returns:
             List of common key
 
         """
-    
+        
         return False
 
 
-    @abstractmethod
-    def get_ds(self) -> xarray.dataset:
+    def get_ds(self) -> xr.Dataset:
         """Return xarray dataset for specific model"""
 
         return False
 
-    @abstractmethod
-    def rename_time_variable(self) -> xarray.dataset:
+    def rename_time_variable(self) -> xr.Dataset:
         """Rename time variable in dataset to common name for workflow
 
         Returns:
-           Updated xarray dataset
+            Updated xarray dataset
 
         """
 
         return False
 
-    @abstractmethod
-    def convert_units(self) -> dask.Series:
+    def convert_units(self) -> dd.Series:
         """Convert observation or model units to match workflow
         
         Returns:
             Converted dataseries
 
         """
-    
+        
         return False
-
 

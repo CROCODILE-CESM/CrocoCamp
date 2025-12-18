@@ -1,6 +1,10 @@
 """Base ModelAdapter class to normalize model input."""
 
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List
+
+import dask.dataframe as dd
+import xarray as xr
 
 class ModelAdapter(ABC):
     """Base class for all model normalizations
@@ -24,7 +28,7 @@ class ModelAdapter(ABC):
         return
 
     @abstractmethod
-    def validate_run_arguments(self) -> List[str]:
+    def validate_run_arguments(self) -> None:
         """Validate that model can use provided arguments specified with
         workflow.run()
         
@@ -50,13 +54,13 @@ class ModelAdapter(ABC):
 
 
     @abstractmethod
-    def get_ds(self) -> xarray.dataset:
+    def get_ds(self) -> xr.Dataset:
         """Return xarray dataset for specific model"""
 
         return False
 
     @abstractmethod
-    def rename_time_variable(self) -> xarray.dataset:
+    def rename_time_variable(self) -> xr.Dataset:
         """Rename time variable in dataset to common name for workflow
 
         Returns:
@@ -67,7 +71,7 @@ class ModelAdapter(ABC):
         return False
 
     @abstractmethod
-    def convert_units(self) -> dask.Series:
+    def convert_units(self) -> dd.Series:
         """Convert observation or model units to match workflow
         
         Returns:
