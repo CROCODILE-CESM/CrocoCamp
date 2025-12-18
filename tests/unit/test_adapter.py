@@ -13,6 +13,14 @@ from crococamp.model_adapter.registry import create_model_adapter
 class TestModelAdapterMOM6:
     """Test ModelAdapterMOM6 methods"""
 
+    def test_init(self):
+        """Test constructor"""
+
+        model_adapter = create_model_adapter("mom6")
+
+        assert isinstance(model_adapter.time_varname, str)
+        assert model_adapter.time_varname == "time"
+
     def test_get_required_config_keys(self):
         """Test get_required_config_keys returns complete list."""
 
@@ -56,16 +64,23 @@ class TestModelAdapterMOM6:
 class TestModelAdapterROMS:
     """Test ModelAdapterROMS methods"""
 
+    def test_init(self):
+        """Test constructor"""
+
+        model_adapter = create_model_adapter("roms")
+
+        assert isinstance(model_adapter.time_varname, str)
+        assert model_adapter.time_varname == "ocean_time"
+
     def test_get_required_config_keys(self):
         """Test get_required_config_keys returns complete list."""
 
         target_keys = [
-            'model_files_folder', 
-            'obs_seq_in_folder', 
-            'output_folder',
-            'roms_filename',
-            'perfect_model_obs_dir', 
-            'parquet_folder'
+            'template_file',
+            'static_file',
+            'ocean_geometry',
+            'model_state_variables',
+            'layer_name'
         ]
 
         model_adapter = create_model_adapter("roms")

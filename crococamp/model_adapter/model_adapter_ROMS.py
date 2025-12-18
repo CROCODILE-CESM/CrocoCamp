@@ -14,7 +14,8 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
 
     def __init__(self) -> None:
 
-        # Assign time_variable_name
+        # Assign time_varname_name
+        self.time_varname = "ocean_time"
         return
 
     def get_required_config_keys(self) -> List[str]:
@@ -25,12 +26,11 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
         """
     
         return [
-            'model_files_folder', 
-            'obs_seq_in_folder', 
-            'output_folder',
-            'roms_filename',
-            'perfect_model_obs_dir', 
-            'parquet_folder'
+            'template_file',
+            'static_file',
+            'ocean_geometry',
+            'model_state_variables',
+            'layer_name'
         ]
     
     def get_common_model_keys(self) -> List[str]:
@@ -54,7 +54,7 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
 
         return False
 
-    def rename_time_variable(self) -> xr.Dataset:
+    def rename_time_varname(self) -> xr.Dataset:
         """Rename time variable in dataset to common name for workflow
 
         Returns:

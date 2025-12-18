@@ -14,7 +14,7 @@ class ModelAdapter(ABC):
 
     def __init__(self) -> None:
 
-        # Assign time_variable_name
+        # Assign time_varname_name
         return False
 
     @abstractmethod
@@ -60,7 +60,7 @@ class ModelAdapter(ABC):
         return False
 
     @abstractmethod
-    def rename_time_variable(self) -> xr.Dataset:
+    def rename_time_varname(self) -> xr.Dataset:
         """Rename time variable in dataset to common name for workflow
 
         Returns:
