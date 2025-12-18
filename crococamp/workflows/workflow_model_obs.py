@@ -247,10 +247,7 @@ class WorkflowModelObs(workflow.Workflow):
         )
 
         print(f'ocean model: {self.ocean_model}')
-        if self.ocean_model=="MOM6":
-            common_model_keys = ['template_file','static_file','ocean_geometry','model_state_variables','layer_name']
-        elif self.ocean_model=="ROMS_rutgers":
-            common_model_keys = ['roms_filename','variables','debug']
+        common_model_keys = self.model_adapter.get_common_model_keys()
         for key in self.config.keys():
             if key=='debug':
                 self._namelist.update_namelist_param(
