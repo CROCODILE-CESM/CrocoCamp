@@ -197,7 +197,7 @@ class TestGetModelTimeInDaysSeconds:
         })
         ds.to_netcdf(model_file)
         
-        days, seconds = file_utils.get_model_time_in_days_seconds(str(model_file))
+        days, seconds = file_utils.get_model_time_in_days_seconds(str(model_file), "time")
         
         assert isinstance(days, (int, np.integer))
         assert isinstance(seconds, (int, np.integer))
@@ -223,7 +223,7 @@ class TestGetModelTimeInDaysSeconds:
         ds.to_netcdf(model_file)
         
         with pytest.raises(ValueError, match="multiple time steps"):
-            file_utils.get_model_time_in_days_seconds(str(model_file))
+            file_utils.get_model_time_in_days_seconds(str(model_file), "time")
     
     def test_get_model_time_in_days_seconds_missing_file(self):
         """Test get_model_time_in_days_seconds raises error for missing file.
@@ -233,7 +233,7 @@ class TestGetModelTimeInDaysSeconds:
         Then: FileNotFoundError is raised
         """
         with pytest.raises(FileNotFoundError):
-            file_utils.get_model_time_in_days_seconds("/nonexistent/model.nc")
+            file_utils.get_model_time_in_days_seconds("/nonexistent/model.nc", "time")
 
 
 class TestGetObsTimeInDaysSeconds:
