@@ -16,6 +16,8 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
 
     def __init__(self) -> None:
 
+        # Assign ocean model name
+        self.ocean_model = "MOM6"
         # Assign time_variable_name
         self.time_varname = "time"
         return

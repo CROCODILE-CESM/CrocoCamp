@@ -16,6 +16,7 @@ class ModelAdapter(ABC):
 
     def __init__(self) -> None:
 
+        # Assign ocean model name
         # Assign time_varname_name
         return False
 

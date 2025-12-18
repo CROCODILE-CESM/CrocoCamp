@@ -16,45 +16,39 @@ from datetime import timedelta
 from crococamp.workflows.workflow_model_obs import WorkflowModelObs
 
 
+@pytest.fixture
+def base_config(tmp_path):
+    """Provide base configuration dictionary with ocean_model for MOM6."""
+    return {
+        'ocean_model': 'MOM6',
+        'model_files_folder': str(tmp_path / 'model'),
+        'obs_seq_in_folder': str(tmp_path / 'obs'),
+        'output_folder': str(tmp_path / 'output'),
+        'template_file': str(tmp_path / 'template.nc'),
+        'static_file': str(tmp_path / 'static.nc'),
+        'ocean_geometry': str(tmp_path / 'ocean.nc'),
+        'perfect_model_obs_dir': str(tmp_path / 'dart'),
+        'parquet_folder': str(tmp_path / 'parquet'),
+    }
+
+
 class TestWorkflowModelObsInit:
     """Tests for WorkflowModelObs initialization."""
     
-    def test_init_removes_existing_log_file(self, tmp_path, monkeypatch):
+    def test_init_removes_existing_log_file(self, base_config, tmp_path, monkeypatch):
         """Test __init__ removes existing perfect_model_obs.log file."""
         monkeypatch.chdir(tmp_path)
         log_file = tmp_path / "perfect_model_obs.log"
         log_file.write_text("old log content")
         
-        config = {
-            'model_files_folder': str(tmp_path / 'model'),
-            'obs_seq_in_folder': str(tmp_path / 'obs'),
-            'output_folder': str(tmp_path / 'output'),
-            'template_file': str(tmp_path / 'template.nc'),
-            'static_file': str(tmp_path / 'static.nc'),
-            'ocean_geometry': str(tmp_path / 'ocean.nc'),
-            'perfect_model_obs_dir': str(tmp_path / 'dart'),
-            'parquet_folder': str(tmp_path / 'parquet'),
-        }
-        
-        workflow = WorkflowModelObs(config)
+        workflow = WorkflowModelObs(base_config)
         
         assert not log_file.exists()
         assert workflow.model_obs_df is None
     
-    def test_init_creates_namelist_template_path(self, tmp_path):
+    def test_init_creates_namelist_template_path(self, base_config):
         """Test __init__ sets input_nml_template path."""
-        config = {
-            'model_files_folder': str(tmp_path / 'model'),
-            'obs_seq_in_folder': str(tmp_path / 'obs'),
-            'output_folder': str(tmp_path / 'output'),
-            'template_file': str(tmp_path / 'template.nc'),
-            'static_file': str(tmp_path / 'static.nc'),
-            'ocean_geometry': str(tmp_path / 'ocean.nc'),
-            'perfect_model_obs_dir': str(tmp_path / 'dart'),
-            'parquet_folder': str(tmp_path / 'parquet'),
-        }
-        
-        workflow = WorkflowModelObs(config)
+        workflow = WorkflowModelObs(base_config)
         
         assert workflow.input_nml_template is not None
         assert 'input_template.nml' in str(workflow.input_nml_template)
@@ -63,21 +57,10 @@ class TestWorkflowModelObsInit:
 class TestGetRequiredConfigKeys:
     """Tests for get_required_config_keys method."""
     
-    def test_returns_all_required_keys(self, tmp_path):
+    def test_returns_all_required_keys(self, base_config):
         """Test get_required_config_keys returns complete list."""
-        config = {
-            'model_files_folder': str(tmp_path),
-            'obs_seq_in_folder': str(tmp_path),
-            'output_folder': str(tmp_path),
-            'template_file': 'template.nc',
-            'static_file': 'static.nc',
-            'ocean_geometry': 'ocean.nc',
-            'perfect_model_obs_dir': str(tmp_path),
-            'parquet_folder': str(tmp_path),
-        }
-        
-        workflow = WorkflowModelObs(config)
-        required_keys = workflow.get_required_config_keys()
+        workflow = WorkflowModelObs(base_config)
+        required_keys = workflow.model_adapter.get_required_config_keys()
         
         assert isinstance(required_keys, list)
         assert len(required_keys) == 8
@@ -92,22 +75,12 @@ class TestRunMethod:
     @patch('crococamp.workflows.workflow_model_obs.config_utils.clear_folder')
     @patch.object(WorkflowModelObs, 'merge_model_obs_to_parquet')
     @patch.object(WorkflowModelObs, 'process_files')
-    def test_run_with_clear_output(self, mock_process, mock_merge, mock_clear, tmp_path, capsys):
+    def test_run_with_clear_output(self, mock_process, mock_merge, mock_clear, base_config, tmp_path, capsys):
         """Test run() clears output folders when clear_output=True."""
-        config = {
-            'model_files_folder': str(tmp_path / 'model'),
-            'obs_seq_in_folder': str(tmp_path / 'obs'),
-            'output_folder': str(tmp_path / 'output'),
-            'template_file': 'template.nc',
-            'static_file': 'static.nc',
-            'ocean_geometry': 'ocean.nc',
-            'perfect_model_obs_dir': str(tmp_path / 'dart'),
-            'parquet_folder': str(tmp_path / 'parquet'),
-            'input_nml_bck': str(tmp_path / 'bck'),
-            'trimmed_obs_folder': str(tmp_path / 'trimmed'),
-        }
+        base_config['input_nml_bck'] = str(tmp_path / 'bck')
+        base_config['trimmed_obs_folder'] = str(tmp_path / 'trimmed')
         
-        workflow = WorkflowModelObs(config)
+        workflow = WorkflowModelObs(base_config)
         mock_process.return_value = 5
         
         workflow.run(clear_output=True, trim_obs=False)
@@ -118,20 +91,9 @@ class TestRunMethod:
     
     @patch.object(WorkflowModelObs, 'merge_model_obs_to_parquet')
     @patch.object(WorkflowModelObs, 'process_files')
-    def test_run_parquet_only_skips_processing(self, mock_process, mock_merge, tmp_path, capsys):
+    def test_run_parquet_only_skips_processing(self, mock_process, mock_merge, base_config, capsys):
         """Test run() with parquet_only=True skips file processing."""
-        config = {
-            'model_files_folder': str(tmp_path / 'model'),
-            'obs_seq_in_folder': str(tmp_path / 'obs'),
-            'output_folder': str(tmp_path / 'output'),
-            'template_file': 'template.nc',
-            'static_file': 'static.nc',
-            'ocean_geometry': 'ocean.nc',
-            'perfect_model_obs_dir': str(tmp_path / 'dart'),
-            'parquet_folder': str(tmp_path / 'parquet'),
-        }
-        
-        workflow = WorkflowModelObs(config)
+        workflow = WorkflowModelObs(base_config)
         
         workflow.run(parquet_only=True, trim_obs=False)
         
@@ -147,6 +109,7 @@ class TestProcessFiles:
     def test_process_files_checks_perfect_model_obs_dir(self, tmp_path):
         """Test process_files checks for perfect_model_obs_dir in config."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path / 'model'),
             'obs_seq_in_folder': str(tmp_path / 'obs'),
             'output_folder': str(tmp_path / 'output'),
@@ -173,6 +136,7 @@ class TestProcessFiles:
                                            tmp_path):
         """Test process_files with no_matching=True processes files in pairs."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path / 'model'),
             'obs_seq_in_folder': str(tmp_path / 'obs'),
             'output_folder': str(tmp_path / 'output'),
@@ -203,6 +167,7 @@ class TestPrintWorkflowConfig:
     def test_print_workflow_config_basic(self, tmp_path, capsys):
         """Test _print_workflow_config prints all configuration values."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': '/path/to/model',
             'obs_seq_in_folder': '/path/to/obs',
             'output_folder': '/path/to/output',
@@ -230,6 +195,7 @@ class TestPrintWorkflowConfig:
     def test_print_workflow_config_with_trim_obs(self, tmp_path, capsys):
         """Test _print_workflow_config includes trimmed_obs_folder when trim_obs=True."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path),
             'obs_seq_in_folder': str(tmp_path),
             'output_folder': str(tmp_path),
@@ -263,6 +229,7 @@ class TestValidateWorkflowPaths:
                                           mock_create_folder, mock_check_nc, tmp_path):
         """Test _validate_workflow_paths validates all required paths."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path / 'model'),
             'obs_seq_in_folder': str(tmp_path / 'obs'),
             'output_folder': str(tmp_path / 'output'),
@@ -290,6 +257,7 @@ class TestValidateWorkflowPaths:
                                                    mock_create_folder, mock_check_nc, tmp_path):
         """Test _validate_workflow_paths creates trimmed_obs_folder when trim_obs=True."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path / 'model'),
             'obs_seq_in_folder': str(tmp_path / 'obs'),
             'output_folder': str(tmp_path / 'output'),
@@ -315,6 +283,7 @@ class TestInitializeModelNamelist:
     def test_initialize_model_namelist_basic_params(self, mock_namelist_class, tmp_path):
         """Test _initialize_model_namelist sets basic namelist parameters."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path),
             'obs_seq_in_folder': str(tmp_path),
             'output_folder': str(tmp_path),
@@ -341,6 +310,7 @@ class TestInitializeModelNamelist:
                                                      mock_validate_obs, tmp_path, capsys):
         """Test _initialize_model_namelist processes use_these_obs config."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path),
             'obs_seq_in_folder': str(tmp_path),
             'output_folder': str(tmp_path),
@@ -370,6 +340,7 @@ class TestInitializeModelNamelist:
                                                                 mock_validate_obs, tmp_path, capsys):
         """Test _initialize_model_namelist handles obs_types validation errors."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path),
             'obs_seq_in_folder': str(tmp_path),
             'output_folder': str(tmp_path),
@@ -404,6 +375,7 @@ class TestProcessModelObsPair:
                                                   mock_popen, tmp_path, capsys):
         """Test _process_model_obs_pair with trim_obs=True."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path),
             'obs_seq_in_folder': str(tmp_path),
             'output_folder': str(tmp_path / 'output'),
@@ -450,6 +422,7 @@ class TestProcessModelObsPair:
     def test_process_model_obs_pair_force_obs_time(self, mock_get_obs_time, mock_popen, tmp_path):
         """Test _process_model_obs_pair with force_obs_time=True uses obs time."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path),
             'obs_seq_in_folder': str(tmp_path),
             'output_folder': str(tmp_path / 'output'),
@@ -494,6 +467,7 @@ class TestProcessModelObsPair:
     def test_process_model_obs_pair_subprocess_error(self, mock_get_time, mock_popen, tmp_path):
         """Test _process_model_obs_pair raises error on subprocess failure."""
         config = {
+            'ocean_model': 'MOM6',
             'model_files_folder': str(tmp_path),
             'obs_seq_in_folder': str(tmp_path),
             'output_folder': str(tmp_path / 'output'),

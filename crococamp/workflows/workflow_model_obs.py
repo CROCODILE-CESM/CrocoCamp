@@ -231,9 +231,9 @@ class WorkflowModelObs(workflow.Workflow):
         config_utils.check_or_create_folder(input_nml_bck, "input_nml_bck")
 
         print("  Validating .nc files for model_nml...")
-        # config_utils.check_nc_file(self.config['template_file'], "template_file")
-        # config_utils.check_nc_file(self.config['static_file'], "static_file")
-        # config_utils.check_nc_file(self.config['ocean_geometry'], "ocean_geometry")
+        config_utils.check_nc_file(self.config['template_file'], "template_file")
+        config_utils.check_nc_file(self.config['static_file'], "static_file")
+        config_utils.check_nc_file(self.config['ocean_geometry'], "ocean_geometry")
     
     def _initialize_model_namelist(self) -> None:
         """Initialize model namelist parameters."""
@@ -246,7 +246,7 @@ class WorkflowModelObs(workflow.Workflow):
             "model_nml", "assimilation_period_seconds", self.config['time_window']['seconds'], string=False
         )
 
-        print(f'ocean model: {self.ocean_model}')
+        print(f'ocean model: {self.model_adapter.ocean_model}')
         common_model_keys = self.model_adapter.get_common_model_keys()
         for key in self.config.keys():
             if key=='debug':
@@ -404,7 +404,7 @@ class WorkflowModelObs(workflow.Workflow):
         if not force_obs_time:
             # Assign time to model file
             print("          Retrieving model time from model input file and updating namelist...")
-            model_time_days, model_time_seconds = file_utils.get_model_time_in_days_seconds(model_in_file,self.time_var)
+            model_time_days, model_time_seconds = file_utils.get_model_time_in_days_seconds(model_in_file,self.model_adapter.time_varname)
             self._namelist.update_namelist_param(
                 "perfect_model_obs_nml", "init_time_days", model_time_days,
                 string=False

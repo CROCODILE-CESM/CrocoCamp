@@ -16,6 +16,8 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
 
     def __init__(self) -> None:
 
+        # Assign ocean model name
+        self.ocean_model = "ROMS"
         # Assign time_varname_name
         self.time_varname = "ocean_time"
         return
