@@ -35,18 +35,6 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
             'parquet_folder'
         ]
     
-    def validate_run_arguments(self) -> None:
-        """Validate that model can use provided arguments specified with
-        workflow.run()
-        
-        Raise:
-            ValueError if provided argument is not compatible and is set to True
-            Warning if provided argument is not compatible but is set to False
-
-        """
-    
-        return False
-    
     def get_common_model_keys(self) -> List[str]:
         """Return list of keys that are common to all input.nml files for this
         model
@@ -55,9 +43,15 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
             List of common key
 
         """
-    
-        return False
 
+        return [
+            'model_files_folder', 
+            'obs_seq_in_folder', 
+            'output_folder',
+            'roms_filename',
+            'perfect_model_obs_dir', 
+            'parquet_folder'
+        ]
 
     def get_ds(self) -> xr.Dataset:
         """Return xarray dataset for specific model"""
@@ -84,4 +78,15 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
     
         return False
 
+    def validate_run_arguments(self) -> None:
+        """Validate that model can use provided arguments specified with
+        workflow.run()
+        
+        Raise:
+            ValueError if provided argument is not compatible and is set to True
+            Warning if provided argument is not compatible but is set to False
 
+        """
+    
+        return False
+    

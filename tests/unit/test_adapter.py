@@ -34,6 +34,24 @@ class TestModelAdapterMOM6:
         assert all(isinstance(item, str) for item in required_keys)
         assert required_keys == target_keys
 
+    def test_get_common_model_keys(self):
+        """Test get_required_config_keys returns complete list."""
+
+        target_keys = [
+            'model_files_folder', 
+            'obs_seq_in_folder', 
+            'output_folder',
+            'roms_filename',
+            'perfect_model_obs_dir', 
+            'parquet_folder'
+        ]
+
+        model_adapter = create_model_adapter("mom6")
+        common_model_keys = model_adapter.get_common_model_keys()
+        
+        assert isinstance(common_model_keys, list)
+        assert all(isinstance(item, str) for item in common_model_keys)
+        assert common_model_keys == target_keys
 
 class TestModelAdapterROMS:
     """Test ModelAdapterROMS methods"""
