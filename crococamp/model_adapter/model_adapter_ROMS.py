@@ -65,7 +65,7 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
         try:
             # Fix calendar as xarray does not read it consistently with ncviews
             ds = xr.decode_cf(ds, decode_timedelta=True)
-            ds = self.rename_time_varname()
+            ds = self.rename_time_varname(ds)
             yield ds
         finally:
             ds.close()

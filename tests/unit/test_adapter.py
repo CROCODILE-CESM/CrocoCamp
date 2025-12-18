@@ -39,7 +39,7 @@ def create_tmp_ROMS_nc(tmp_path):
         coords={"ocean_time": [0], "lat": np.arange(10), "lon": np.arange(10)}
     )
     model_nc = tmp_path / "model.nc"
-    ds_template.to_netcdf(template)
+    ds_template.to_netcdf(model_nc)
     
 class TestModelAdapterMOM6:
     """Test ModelAdapterMOM6 methods"""
@@ -146,3 +146,11 @@ class TestModelAdapterROMS:
         assert isinstance(common_model_keys, list)
         assert all(isinstance(item, str) for item in common_model_keys)
         assert common_model_keys == target_keys
+
+    def test_open_dataset_ctx(self, create_tmp_ROMS_nc, tmp_path):
+        """Test open_dataset_ctx updates calendar and time varname"""
+        model_adapter = create_model_adapter("roms")
+
+        model_nc = tmp_path / "model.nc"
+        with model_adapter.open_dataset_ctx(model_nc) as ds:
+            assert "time" in ds.coords
