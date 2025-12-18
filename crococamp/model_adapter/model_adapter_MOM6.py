@@ -21,7 +21,16 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
             List of required configuration key names
         """
     
-        return False
+        return [
+            'model_files_folder', 
+            'obs_seq_in_folder', 
+            'output_folder',
+            'template_file', 
+            'static_file', 
+            'ocean_geometry',
+            'perfect_model_obs_dir', 
+            'parquet_folder'
+        ]
 
     @abstractmethod
     def validate_run_arguments(self) -> List[str]:

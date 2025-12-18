@@ -45,33 +45,6 @@ class WorkflowModelObs(workflow.Workflow):
         if os.path.isfile(self.perfect_model_obs_log_file):
             os.remove(self.perfect_model_obs_log_file)
 
-    def get_required_config_keys(self) -> List[str]:
-        """Return list of required configuration keys."""
-        if self.ocean_model == "MOM6":
-            return [
-                'model_files_folder', 
-                'obs_seq_in_folder', 
-                'output_folder',
-                'template_file', 
-                'static_file', 
-                'ocean_geometry',
-                'perfect_model_obs_dir', 
-                'parquet_folder'
-            ]
-
-        elif self.ocean_model == "ROMS_rutgers":
-            return [
-                'model_files_folder', 
-                'obs_seq_in_folder', 
-                'output_folder',
-                'roms_filename',
-                'perfect_model_obs_dir', 
-                'parquet_folder'
-            ]
-
-        else:
-            raise ValueError("ocean_model provided does not have required config keys.")
-    
     def run(self, trim_obs: bool = True, no_matching: bool = False,
             force_obs_time: bool = False, parquet_only: bool = False,
             clear_output: bool = False) -> int:

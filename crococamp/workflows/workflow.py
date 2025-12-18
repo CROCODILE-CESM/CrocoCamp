@@ -51,19 +51,10 @@ class Workflow(ABC):
         Subclasses should override this method to provide specific validation.
         """
 
-        required_keys = self.get_required_config_keys()
+        required_keys = self.adapter.get_required_config_keys()
         if required_keys:
             config_utils.validate_config_keys(self.config, required_keys)
 
-    @abstractmethod
-    def get_required_config_keys(self) -> List[str]:
-        """Return list of required configuration keys.
-        
-        Returns:
-            List of required configuration key names
-        """
-        pass
-    
     @abstractmethod
     def run(self) -> Any:
         """Execute the workflow.

@@ -21,7 +21,7 @@ class ModelAdapter(ABC):
             List of required configuration key names
         """
     
-        return False
+        return
 
     @abstractmethod
     def validate_run_arguments(self) -> List[str]:
