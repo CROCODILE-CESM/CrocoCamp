@@ -292,16 +292,9 @@ class WorkflowModelObs(workflow.Workflow):
         
         for model_in_f in model_in_files:
             print(f"    Processing model file {model_in_f}...")
-            with xr.open_dataset(model_in_f, decode_times=False) as ds:
-                # Fix calendar as xarray does not read it consistently with ncviews
-                if self.ocean_model == "MOM6":
-                    ds['time'].attrs['calendar'] = 'proleptic_gregorian'
-                    ds = xr.decode_cf(ds, decode_timedelta=True)
-                    self.time_var = 'time'
-                elif self.ocean_model=="ROMS_rutgers":
-                    ds = xr.decode_cf(ds, decode_timedelta=True)
-                    self.time_var = 'ocean_time'
-                time_var = self.time_var
+
+            with self.model_adapter.open_dataset_ctx(model_in_f) as ds:
+                time_var = self.model_adapter.time_varname
                 snapshots_nb = ds.sizes[time_var]
                 print(f"      model has {snapshots_nb} snapshots.")
                 

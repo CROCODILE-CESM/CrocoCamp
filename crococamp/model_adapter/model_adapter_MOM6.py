@@ -1,5 +1,7 @@
 """ModelAdapter class to normalize MOM6 model input."""
 
+from contextlib import contextmanager
+from collections.abc import Iterator
 from typing import Any, Dict, List
 import dask.dataframe as dd
 import xarray as xr
@@ -54,20 +56,25 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
             'parquet_folder'
         ]
 
-    def get_ds(self) -> xr.Dataset:
-        """Return xarray dataset for specific model"""
-
-        return False
-
-    def rename_time_varname(self) -> xr.Dataset:
-        """Rename time variable in dataset to common name for workflow
-
-        Returns:
-           Updated xarray dataset
-
+    @contextmanager
+    def open_dataset_ctx(self, path: str) -> Iterator[xr.Dataset]:
+        """Open a dataset performing very few MOM6-dependent operations and
+        close it
         """
+        
+        ds = xr.open_dataset(
+            path,
+            decode_times=False
+        )
 
-        return False
+        try:
+            # Fix calendar as xarray does not read it consistently with ncviews
+            ds[self.time_varname].attrs['calendar'] = 'proleptic_gregorian'
+            ds = xr.decode_cf(ds, decode_timedelta=True)
+            ds = self.rename_time_varname()
+            yield ds
+        finally:
+            ds.close()
 
     def convert_units(self) -> dd.Series:
         """Convert observation or model units to match workflow

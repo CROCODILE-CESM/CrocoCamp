@@ -1,6 +1,8 @@
 """Base ModelAdapter class to normalize model input."""
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from collections.abc import Iterator
 from typing import Any, Dict, List
 
 import dask.dataframe as dd
@@ -16,6 +18,16 @@ class ModelAdapter(ABC):
 
         # Assign time_varname_name
         return False
+
+    @contextmanager
+    def open_dataset_ctx(self, path: str) -> Iterator[xr.Dataset]:
+        """Open a dataset and guarantee it is closed."""
+
+        ds = xr.open_dataset(path, decode_timedelta=True)
+        try:
+            yield ds
+        finally:
+            ds.close()
 
     @abstractmethod
     def get_required_config_keys(self) -> List[str]:
@@ -53,13 +65,6 @@ class ModelAdapter(ABC):
         return False
 
 
-    @abstractmethod
-    def get_ds(self) -> xr.Dataset:
-        """Return xarray dataset for specific model"""
-
-        return False
-
-    @abstractmethod
     def rename_time_varname(self) -> xr.Dataset:
         """Rename time variable in dataset to common name for workflow
 
@@ -68,7 +73,9 @@ class ModelAdapter(ABC):
 
         """
 
-        return False
+        ds = ds.rename({self.time_varname: "time"})
+
+        return ds
 
     @abstractmethod
     def convert_units(self) -> dd.Series:
