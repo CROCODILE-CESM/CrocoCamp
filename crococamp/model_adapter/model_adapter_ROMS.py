@@ -33,18 +33,6 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
             'parquet_folder'
         ]
     
-    def validate_run_arguments(self) -> None:
-        """Validate that model can use provided arguments specified with
-        workflow.run()
-        
-        Raise:
-            ValueError if provided argument is not compatible and is set to True
-            Warning if provided argument is not compatible but is set to False
-
-        """
-    
-        return False
-    
     def get_common_model_keys(self) -> List[str]:
         """Return list of keys that are common to all input.nml files for this
         model
@@ -54,7 +42,11 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
 
         """
     
-        return False
+        return [
+            'roms_filename',
+            'variables',
+            'debug'
+        ]
 
 
     def get_ds(self) -> xr.Dataset:
@@ -82,4 +74,15 @@ class ModelAdapterROMS(model_adapter.ModelAdapter):
     
         return False
 
+    def validate_run_arguments(self) -> None:
+        """Validate that model can use provided arguments specified with
+        workflow.run()
+        
+        Raise:
+            ValueError if provided argument is not compatible and is set to True
+            Warning if provided argument is not compatible but is set to False
 
+        """
+    
+        return False
+    
