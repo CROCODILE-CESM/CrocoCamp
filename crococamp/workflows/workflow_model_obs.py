@@ -527,9 +527,7 @@ class WorkflowModelObs(workflow.Workflow):
         merged = merged.sort_values(by=sort_order)
 
         # DART's pmo uses different units for MOM6 and ROMS
-        if self.ocean_model == "ROMS_rutgers":
-            condition = merged["type"].str.contains("SALINITY")
-            merged["obs"] = merged["obs"].mask(condition, merged["obs"] * 1000)
+        merged = self.model_adapter.convert_units(merged)
 
         # Add diagnostic columns
         merged['difference'] = merged['obs'] - merged[perf_model_col]
