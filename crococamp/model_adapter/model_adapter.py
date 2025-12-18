@@ -65,7 +65,7 @@ class ModelAdapter(ABC):
         return False
 
 
-    def rename_time_varname(self) -> xr.Dataset:
+    def rename_time_varname(self, ds: xr.Dataset) -> xr.Dataset:
         """Rename time variable in dataset to common name for workflow
 
         Returns:

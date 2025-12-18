@@ -71,7 +71,7 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
             # Fix calendar as xarray does not read it consistently with ncviews
             ds[self.time_varname].attrs['calendar'] = 'proleptic_gregorian'
             ds = xr.decode_cf(ds, decode_timedelta=True)
-            ds = self.rename_time_varname()
+            ds = self.rename_time_varname(ds)
             yield ds
         finally:
             ds.close()
