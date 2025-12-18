@@ -103,6 +103,30 @@ class TestModelAdapterMOM6:
             assert "time" in ds.coords
             assert ds[model_adapter.time_varname].attrs.get("calendar") == "proleptic_gregorian"
 
+    def test_convert_units(self):
+        """Test convert_units updates salinity values"""
+
+        obs_types = [
+            "BOTTLE_SALINITY",
+            "ARGO_SALINITY",
+            "SALINITY",
+            "TEMPERATURE",
+            "ARGO_TEMPERATURE",
+            "SALTY"
+        ]
+
+        obs_values = np.array([30, 33, 35.1, 14, 16.7, 49])
+        interpolated = obs_values + 0.023
+        mock_df = pd.DataFrame({
+            'interpolated_model': interpolated,
+            'obs': obs_values,
+            'type': obs_types
+        })
+
+        model_adapter = create_model_adapter("mom6")
+        df = model_adapter.convert_units(mock_df)
+
+        assert_frame_equal(mock_df, df)
 
 class TestModelAdapterROMS:
     """Test ModelAdapterROMS methods"""
@@ -169,7 +193,7 @@ class TestModelAdapterROMS:
             "SALTY"
         ]
 
-        obs_values = np.array([30*1e3, 33*1e3, 35.1*1e3, 14, 16.7, 49])
+        obs_values = np.array([30*1e-3, 33*1e-3, 35.1*1e-3, 14, 16.7, 49])
         interpolated = obs_values + 0.023
         mock_df = pd.DataFrame({
             'interpolated_model': interpolated,
@@ -184,9 +208,8 @@ class TestModelAdapterROMS:
             'obs': target_values,
             'type': obs_types
         })
- 
-        
+         
         model_adapter = create_model_adapter("roms")
         df = model_adapter.convert_units(mock_df)
 
-        assert_frame_equal(mock_df, df)
+        assert_frame_equal(df, target_df)

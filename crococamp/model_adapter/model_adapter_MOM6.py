@@ -3,7 +3,7 @@
 from contextlib import contextmanager
 from collections.abc import Iterator
 from typing import Any, Dict, List
-import dask.dataframe as dd
+import pandas as pd
 import xarray as xr
 
 from . import model_adapter
@@ -76,15 +76,20 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
         finally:
             ds.close()
 
-    def convert_units(self) -> dd.Series:
+    def convert_units(self, df) -> pd.DataFrame:
         """Convert observation or model units to match workflow
         
         Returns:
-            Converted dataseries
+            Converted dataframe
 
         """
+
+        # MOM6 is in PSU
+        # DART's obs_seq are in PSU/1000
+        # DART's pmo for MOM6 converts units
+        # In the future DART might move to PSU
     
-        return False
+        return df
 
     def validate_run_arguments(self) -> None:
         """Validate that model can use provided arguments specified with
