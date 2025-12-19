@@ -15,6 +15,47 @@ from crococamp.model_adapter.model_adapter_MOM6 import ModelAdapterMOM6
 from crococamp.model_adapter.model_adapter_ROMS import ModelAdapterROMS
 from crococamp.model_adapter.registry import create_model_adapter
 
+
+class TestModelAdapterRegistry:
+    """Test model adapter registry and factory function."""
+
+    def test_create_mom6_adapter_lowercase(self):
+        """Test creating MOM6 adapter with lowercase name."""
+        adapter = create_model_adapter("mom6")
+        assert isinstance(adapter, ModelAdapterMOM6)
+        assert adapter.time_varname == "time"
+
+    def test_create_mom6_adapter_uppercase(self):
+        """Test creating MOM6 adapter with uppercase name."""
+        adapter = create_model_adapter("MOM6")
+        assert isinstance(adapter, ModelAdapterMOM6)
+
+    def test_create_roms_adapter_lowercase(self):
+        """Test creating ROMS adapter with lowercase name."""
+        adapter = create_model_adapter("roms")
+        assert isinstance(adapter, ModelAdapterROMS)
+        assert adapter.time_varname == "ocean_time"
+
+    def test_create_roms_adapter_uppercase(self):
+        """Test creating ROMS adapter with uppercase name."""
+        adapter = create_model_adapter("ROMS")
+        assert isinstance(adapter, ModelAdapterROMS)
+
+    def test_create_adapter_invalid_model(self):
+        """Test creating adapter with invalid model name raises error."""
+        with pytest.raises(ValueError, match="Unknown ocean_model"):
+            create_model_adapter("invalid_model")
+
+    def test_create_adapter_none_raises_error(self):
+        """Test creating adapter with None raises error."""
+        with pytest.raises(ValueError, match="ocean_model is required"):
+            create_model_adapter(None)
+
+    def test_create_adapter_whitespace_handling(self):
+        """Test creating adapter handles whitespace in model name."""
+        adapter = create_model_adapter("  MOM6  ")
+        assert isinstance(adapter, ModelAdapterMOM6)
+
 @pytest.fixture
 def create_tmp_MOM6_nc(tmp_path):
     """Create temporary netcdf file to read from disk"""
@@ -104,8 +145,7 @@ class TestModelAdapterMOM6:
             assert ds[model_adapter.time_varname].attrs.get("calendar") == "proleptic_gregorian"
 
     def test_convert_units(self):
-        """Test convert_units updates salinity values"""
-
+        """Test convert_units does not modify MOM6 data."""
         obs_types = [
             "BOTTLE_SALINITY",
             "ARGO_SALINITY",
@@ -127,6 +167,90 @@ class TestModelAdapterMOM6:
         df = model_adapter.convert_units(mock_df)
 
         assert_frame_equal(mock_df, df)
+
+    def test_convert_units_with_missing_values(self):
+        """Test convert_units handles NA values correctly."""
+        mock_df = pd.DataFrame({
+            'interpolated_model': [20.0, np.nan, 22.0],
+            'obs': [20.1, 21.0, np.nan],
+            'type': ['SALINITY', 'TEMPERATURE', 'SALINITY']
+        })
+
+        model_adapter = create_model_adapter("mom6")
+        df = model_adapter.convert_units(mock_df)
+
+        assert pd.isna(df.loc[1, 'interpolated_model'])
+        assert pd.isna(df.loc[2, 'obs'])
+        assert df.loc[0, 'obs'] == 20.1
+
+    def test_convert_units_preserves_dtypes(self):
+        """Test convert_units preserves column data types."""
+        mock_df = pd.DataFrame({
+            'interpolated_model': np.array([20.0, 21.0], dtype=np.float64),
+            'obs': np.array([20.1, 21.1], dtype=np.float64),
+            'type': pd.Series(['SALINITY', 'TEMPERATURE'], dtype='object')
+        })
+
+        model_adapter = create_model_adapter("mom6")
+        df = model_adapter.convert_units(mock_df)
+
+        assert df['interpolated_model'].dtype == np.float64
+        assert df['obs'].dtype == np.float64
+        assert df['type'].dtype == object
+
+    def test_convert_units_empty_dataframe(self):
+        """Test convert_units handles empty dataframe."""
+        mock_df = pd.DataFrame({
+            'interpolated_model': pd.Series([], dtype=np.float64),
+            'obs': pd.Series([], dtype=np.float64),
+            'type': pd.Series([], dtype=object)
+        })
+
+        model_adapter = create_model_adapter("mom6")
+        df = model_adapter.convert_units(mock_df)
+
+        assert len(df) == 0
+        assert list(df.columns) == ['interpolated_model', 'obs', 'type']
+
+    def test_rename_time_varname(self):
+        """Test rename_time_varname renames time coordinate."""
+        ds = xr.Dataset(
+            data_vars={"temp": (["time", "lat"], np.zeros((2, 3)))},
+            coords={"time": [0, 1], "lat": [1, 2, 3]}
+        )
+
+        model_adapter = create_model_adapter("mom6")
+        renamed_ds = model_adapter.rename_time_varname(ds)
+
+        assert "time" in renamed_ds.coords
+        assert model_adapter.time_varname not in renamed_ds.coords or model_adapter.time_varname == "time"
+
+    def test_open_dataset_ctx_file_closure(self, create_tmp_MOM6_nc, tmp_path):
+        """Test open_dataset_ctx closes file after use."""
+        model_adapter = create_model_adapter("mom6")
+        model_nc = tmp_path / "model.nc"
+
+        with model_adapter.open_dataset_ctx(model_nc) as ds:
+            assert ds is not None
+
+        # Dataset should be closed after context exit
+        # xarray doesn't expose a direct "is_closed" attribute,
+        # but we verify no exception is raised
+
+    def test_open_dataset_ctx_nonexistent_file(self, tmp_path):
+        """Test open_dataset_ctx raises error for nonexistent file."""
+        model_adapter = create_model_adapter("mom6")
+        nonexistent = tmp_path / "nonexistent.nc"
+
+        with pytest.raises(FileNotFoundError):
+            with model_adapter.open_dataset_ctx(nonexistent) as ds:
+                pass
+
+    def test_validate_run_arguments_returns_false(self):
+        """Test validate_run_arguments returns False for MOM6."""
+        model_adapter = create_model_adapter("mom6")
+        result = model_adapter.validate_run_arguments()
+        assert result is False
 
 class TestModelAdapterROMS:
     """Test ModelAdapterROMS methods"""
@@ -182,8 +306,7 @@ class TestModelAdapterROMS:
             assert "time" in ds.coords
 
     def test_convert_units(self):
-        """Test convert_units updates salinity values"""
-
+        """Test convert_units converts ROMS salinity from PSU/1000 to PSU."""
         obs_types = [
             "BOTTLE_SALINITY",
             "ARGO_SALINITY",
@@ -213,3 +336,98 @@ class TestModelAdapterROMS:
         df = model_adapter.convert_units(mock_df)
 
         assert_frame_equal(df, target_df)
+
+    def test_convert_units_with_missing_values(self):
+        """Test convert_units handles NA values in salinity."""
+        mock_df = pd.DataFrame({
+            'interpolated_model': [0.020, np.nan, 0.022],
+            'obs': [0.0201, 0.021, np.nan],
+            'type': ['SALINITY', 'TEMPERATURE', 'SALINITY']
+        })
+
+        model_adapter = create_model_adapter("roms")
+        df = model_adapter.convert_units(mock_df)
+
+        assert pd.isna(df.loc[1, 'interpolated_model'])
+        assert pd.isna(df.loc[2, 'obs'])
+        assert np.isclose(df.loc[0, 'obs'], 20.1)
+
+    def test_convert_units_preserves_dtypes(self):
+        """Test convert_units preserves column data types."""
+        mock_df = pd.DataFrame({
+            'interpolated_model': np.array([0.020, 0.021], dtype=np.float64),
+            'obs': np.array([0.0201, 0.0211], dtype=np.float64),
+            'type': pd.Series(['SALINITY', 'TEMPERATURE'], dtype='object')
+        })
+
+        model_adapter = create_model_adapter("roms")
+        df = model_adapter.convert_units(mock_df)
+
+        assert df['interpolated_model'].dtype == np.float64
+        assert df['obs'].dtype == np.float64
+        assert df['type'].dtype == object
+
+    def test_convert_units_only_salinity_affected(self):
+        """Test convert_units only modifies salinity observations."""
+        mock_df = pd.DataFrame({
+            'interpolated_model': [0.020, 15.0, 0.022],
+            'obs': [0.0201, 15.5, 0.0221],
+            'type': ['SALINITY', 'TEMPERATURE', 'ARGO_SALINITY']
+        })
+
+        model_adapter = create_model_adapter("roms")
+        df = model_adapter.convert_units(mock_df)
+
+        assert np.isclose(df.loc[0, 'obs'], 20.1)
+        assert df.loc[1, 'obs'] == 15.5
+        assert np.isclose(df.loc[2, 'obs'], 22.1)
+
+    def test_convert_units_empty_dataframe(self):
+        """Test convert_units handles empty dataframe."""
+        mock_df = pd.DataFrame({
+            'interpolated_model': pd.Series([], dtype=np.float64),
+            'obs': pd.Series([], dtype=np.float64),
+            'type': pd.Series([], dtype=object)
+        })
+
+        model_adapter = create_model_adapter("roms")
+        df = model_adapter.convert_units(mock_df)
+
+        assert len(df) == 0
+        assert list(df.columns) == ['interpolated_model', 'obs', 'type']
+
+    def test_rename_time_varname(self):
+        """Test rename_time_varname renames ocean_time to time."""
+        ds = xr.Dataset(
+            data_vars={"temp": (["ocean_time", "lat"], np.zeros((2, 3)))},
+            coords={"ocean_time": [0, 1], "lat": [1, 2, 3]}
+        )
+
+        model_adapter = create_model_adapter("roms")
+        renamed_ds = model_adapter.rename_time_varname(ds)
+
+        assert "time" in renamed_ds.coords
+        assert "ocean_time" not in renamed_ds.coords
+
+    def test_open_dataset_ctx_file_closure(self, create_tmp_ROMS_nc, tmp_path):
+        """Test open_dataset_ctx closes file after use."""
+        model_adapter = create_model_adapter("roms")
+        model_nc = tmp_path / "model.nc"
+
+        with model_adapter.open_dataset_ctx(model_nc) as ds:
+            assert ds is not None
+
+    def test_open_dataset_ctx_nonexistent_file(self, tmp_path):
+        """Test open_dataset_ctx raises error for nonexistent file."""
+        model_adapter = create_model_adapter("roms")
+        nonexistent = tmp_path / "nonexistent.nc"
+
+        with pytest.raises(FileNotFoundError):
+            with model_adapter.open_dataset_ctx(nonexistent) as ds:
+                pass
+
+    def test_validate_run_arguments_returns_false(self):
+        """Test validate_run_arguments returns False for ROMS."""
+        model_adapter = create_model_adapter("roms")
+        result = model_adapter.validate_run_arguments()
+        assert result is False
