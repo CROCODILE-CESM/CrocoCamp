@@ -36,12 +36,13 @@ class ModelAdapterROMSRutgers(ModelAdapter):
         """
     
         return [
-            'template_file',
-            'static_file',
-            'ocean_geometry',
-            'model_state_variables',
-            'layer_name'
-        ]
+            'model_files_folder', 
+            'obs_seq_in_folder', 
+            'output_folder',
+            'roms_filename',
+            'perfect_model_obs_dir', 
+            'parquet_folder'
+       ]
     
     def get_common_model_keys(self) -> List[str]:
         """Return list of keys that are common to all input.nml files for this

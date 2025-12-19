@@ -40,13 +40,9 @@ def roms_rutgers_config(tmp_path):
         'model_files_folder': str(tmp_path / 'model'),
         'obs_seq_in_folder': str(tmp_path / 'obs'),
         'output_folder': str(tmp_path / 'output'),
-        'template_file': str(tmp_path / 'template.nc'),
-        'static_file': str(tmp_path / 'static.nc'),
-        'ocean_geometry': str(tmp_path / 'ocean.nc'),
+        'roms_filename': str(tmp_path / 'roms'),
         'perfect_model_obs_dir': str(tmp_path / 'dart'),
         'parquet_folder': str(tmp_path / 'parquet'),
-        'model_state_variables': 'temp,salt',
-        'layer_name': 's_rho',
     }
 
 

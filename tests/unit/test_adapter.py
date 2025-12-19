@@ -298,11 +298,12 @@ class TestModelAdapterROMSRutgers:
         """Test get_required_config_keys returns complete list."""
 
         target_keys = [
-            'template_file',
-            'static_file',
-            'ocean_geometry',
-            'model_state_variables',
-            'layer_name'
+            'model_files_folder', 
+            'obs_seq_in_folder', 
+            'output_folder',
+            'roms_filename',
+            'perfect_model_obs_dir', 
+            'parquet_folder'
         ]
 
         model_adapter = create_model_adapter("roms_rutgers")
