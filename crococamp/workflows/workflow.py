@@ -33,14 +33,30 @@ class Workflow(ABC):
     @classmethod
     def from_config_file(cls: Type['Workflow'], config_file: str, **kwargs: Any) -> 'Workflow':
         """Create workflow instance from configuration file.
-        
+
         Args:
             config_file: Path to YAML configuration file
             **kwargs: Additional keyword arguments to override config values
-            
+
         Returns:
             Workflow instance
+
+        Examples:
+            >>> # Basic usage
+            >>> workflow = WorkflowModelObs.from_config_file("config.yaml")
+            >>> 
+            >>> # Override specific config values
+            >>> workflow = WorkflowModelObs.from_config_file(
+            ...     "config.yaml",
+            ...     output_folder="/custom/path",
+            ...     parquet_folder="/custom/parquet"
+            ... )
+            >>> 
+            >>> # Typical workflow
+            >>> workflow = WorkflowModelObs.from_config_file("config_mom6.yaml")
+            >>> workflow.run()
         """
+
         config = config_utils.read_config(config_file)
         
         # Override config with any provided kwargs

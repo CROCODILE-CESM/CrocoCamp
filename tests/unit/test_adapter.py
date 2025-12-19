@@ -1,4 +1,16 @@
-"""Unit tests for ModelAdapter class and subclasses."""
+"""Unit tests for ModelAdapter classes and registry.
+
+Tests the model adapter architecture including:
+- Adapter registry and factory function (create_model_adapter)
+- MOM6-specific adapter behavior and unit conversions
+- ROMS-specific adapter behavior and unit conversions  
+- Dataset opening with context managers
+- Run options validation and capabilities checking
+- Configuration key requirements per model
+
+The tests use fixtures to create temporary netCDF files and mock
+dependencies where appropriate.
+"""
 
 import os
 import numpy as np

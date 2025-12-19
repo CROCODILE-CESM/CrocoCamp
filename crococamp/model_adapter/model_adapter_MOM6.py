@@ -65,8 +65,13 @@ class ModelAdapterMOM6(ModelAdapter):
 
     @contextmanager
     def open_dataset_ctx(self, path: str) -> Iterator[xr.Dataset]:
-        """Open a dataset performing very few MOM6-dependent operations and
-        close it
+        """Open a MOM6 dataset with proper time decoding and calendar handling.
+
+        Args:
+            path: Path to MOM6 netCDF file
+
+        Yields:
+            xr.Dataset with properly decoded times and renamed time variable
         """
         
         ds = xr.open_dataset(
@@ -86,8 +91,11 @@ class ModelAdapterMOM6(ModelAdapter):
     def convert_units(self, df) -> pd.DataFrame:
         """Convert observation or model units to match workflow
         
+        Args:
+            df: DataFrame with columns including 'type' and 'obs'
+
         Returns:
-            Converted dataframe
+            df: Converted dataframe
 
         """
 

@@ -31,10 +31,14 @@ class ModelAdapter(ABC):
     capabilities: ModelAdapterCapabilities = ModelAdapterCapabilities()
 
     def __init__(self) -> None:
+        """Initialize base ModelAdapter.
 
-        # Assign ocean model name
-        # Assign time_varname_name
-        return False
+        Note: This is an abstract base class. Subclasses must override this
+        method to set:
+        - self.ocean_model: Name of the ocean model (str)
+        - self.time_varname: Name of the time variable in model files (str)
+        """
+        pass  # Subclasses must implement
 
     @contextmanager
     def open_dataset_ctx(self, path: str) -> Iterator[xr.Dataset]:

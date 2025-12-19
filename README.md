@@ -2,6 +2,8 @@
 
 **CrocoCamp** is a Python toolset for comparing ocean model outputs and observation datasets. It streamlines workflows for interpolating model data into the observation space, producing tabular data in Parquet format ready for analysis and interactive visualization.
 
+**New in December 2025:** CrocoCamp now supports **ROMS (Regional Ocean Modeling System)** in addition to MOM6, with a flexible model adapter architecture that enables easy extension to other ocean models. The new architecture abstracts model-specific operations (file I/O, unit conversions, configuration requirements) into dedicated adapters, making the codebase more maintainable and extensible.
+
 ## Summary
 
 - [Features](#features)
@@ -22,10 +24,11 @@
 Current:
 - Batch processing of model and observation files
 - Generation of diagnostic and comparison files in Parquet format
-- Robust YAML configuration
+- Robust YAML configuration with model-specific validation
 - Designed for extensibility and reproducibility
-- Ocean models supported: MOM6
+- **Ocean models supported: MOM6, ROMS** (via model adapter architecture)
 - Ocean observation format supported: DART obs_seq.in format
+- Model adapter system for easy extension to new ocean models
 
 Future:
 - Refined temporal and spatial resampling tools:
@@ -113,7 +116,16 @@ These tutorials demonstrate:
 
 ## Configuration
 
-Edit the provided `configs/config_template.yaml` to set your input, output, and model/obs paths. The template file contains all necessary configuration options with detailed comments
+Edit the provided `configs/config_template.yaml` to set your input, output, and model/obs paths. The template file contains all necessary configuration options with detailed comments.
+
+**Important:** You must specify the `ocean_model` field in your configuration file to select the appropriate model adapter:
+```yaml
+ocean_model: MOM6  # or ROMS
+```
+
+Different ocean models may require different configuration keys. For example:
+- **MOM6** requires: `model_files_folder`, `perfect_model_obs_dir`, and standard MOM6 grid files
+- **ROMS** requires: `roms_filename`, `layer_name`, `model_state_variables`, and ROMS-specific grid files
 
 **Note for NCAR HPC Users:** The paths in the provided configuration files and some paths used in the tutorial notebooks are pre-configured for resources available on NCAR's High Performance Computing systems, including:
 - CrocoLake observation dataset paths
@@ -182,6 +194,7 @@ The toolkit is organized into logical modules:
 - **`utils/`** - Configuration and namelist file utilities
 - **`io/`** - File handling and observation sequence processing
 - **`workflows/`** - High-level workflow orchestration
+- **`model_adapter/`** - Model-specific adapters for MOM6, ROMS, and future models
 - **`cli/`** - Command-line interfaces
 - **`viz/`** - Interactive visualization widgets for data analysis
 
@@ -197,6 +210,19 @@ The toolkit is organized into logical modules:
 - `get_config(key)` - Get configuration value
 - `set_config(key, value)` - Set configuration value
 - `print_config()` - Print current configuration
+
+#### Model Adapter Classes
+
+**`ModelAdapter`** - Abstract base class for model-specific operations
+- Defines interface for handling different ocean model formats
+- Model-specific subclasses: `ModelAdapterMOM6`, `ModelAdapterROMS`
+
+**Key adapter features:**
+- Automatic model detection from `ocean_model` configuration field
+- Model-specific file I/O with correct time decoding and calendar handling
+- Unit conversion (e.g., salinity units differ between MOM6 and ROMS)
+- Validation of compatible workflow run options per model
+- Configuration key requirements specific to each model
 
 #### Visualization Classes
 
@@ -232,7 +258,9 @@ from crococamp.workflows import WorkflowModelObs
 workflow = WorkflowModelObs.from_config_file("config.yaml")
 
 # Or create workflow with config dictionary directly in code
-config = {
+# Example for MOM6:
+config_mom6 = {
+    'ocean_model': 'MOM6',
     'model_files_folder': '/path/to/model/files',
     'obs_seq_in_folder': '/path/to/obs_seq_in/files', 
     'output_folder': '/path/to/output',
@@ -242,7 +270,22 @@ config = {
     'perfect_model_obs_dir': '/path/to/perfect_model_obs',
     'parquet_folder': '/path/to/parquet'
 }
-workflow = WorkflowModelObs(config)
+workflow = WorkflowModelObs(config_mom6)
+
+# Example for ROMS:
+config_roms = {
+    'ocean_model': 'ROMS',
+    'roms_filename': '/path/to/roms_avg.nc',
+    'obs_seq_in_folder': '/path/to/obs_seq_in/files',
+    'output_folder': '/path/to/output',
+    'template_file': '/path/to/template.nc',
+    'static_file': '/path/to/static.nc',
+    'ocean_geometry': '/path/to/geometry.nc',
+    'layer_name': 's_rho',
+    'model_state_variables': {'temp': 'QTY_POTENTIAL_TEMPERATURE', 'salt': 'QTY_SALINITY'},
+    'parquet_folder': '/path/to/parquet'
+}
+workflow = WorkflowModelObs(config_roms)
 
 # Run the complete workflow
 files_processed = workflow.run(trim_obs=True, no_matching=False)
