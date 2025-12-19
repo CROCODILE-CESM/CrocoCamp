@@ -33,10 +33,10 @@ def base_config(tmp_path):
 
 
 @pytest.fixture
-def roms_config(tmp_path):
-    """Provide base configuration dictionary with ocean_model for ROMS."""
+def roms_rutgers_config(tmp_path):
+    """Provide base configuration dictionary with ocean_model for ROMS_RUTGERS."""
     return {
-        'ocean_model': 'ROMS',
+        'ocean_model': 'ROMS_RUTGERS',
         'model_files_folder': str(tmp_path / 'model'),
         'obs_seq_in_folder': str(tmp_path / 'obs'),
         'output_folder': str(tmp_path / 'output'),
@@ -143,34 +143,34 @@ class TestRunMethod:
         mock_merge.assert_called_once()
     
     @patch.object(WorkflowModelObs, 'merge_model_obs_to_parquet')
-    def test_run_validates_options_roms_unsupported_trim_obs(self, mock_merge, roms_config):
-        """Test run() raises NotImplementedError for ROMS with trim_obs=True."""
-        workflow = WorkflowModelObs(roms_config)
+    def test_run_validates_options_roms_rutgers_unsupported_trim_obs(self, mock_merge, roms_rutgers_config):
+        """Test run() raises NotImplementedError for ROMS_RUTGERS with trim_obs=True."""
+        workflow = WorkflowModelObs(roms_rutgers_config)
         
         with pytest.raises(NotImplementedError, match="does not support.*observation files trimming"):
             workflow.run(trim_obs=True, parquet_only=True)
     
     @patch.object(WorkflowModelObs, 'merge_model_obs_to_parquet')
-    def test_run_validates_options_roms_unsupported_no_matching(self, mock_merge, roms_config):
-        """Test run() raises NotImplementedError for ROMS with no_matching=True."""
-        workflow = WorkflowModelObs(roms_config)
+    def test_run_validates_options_roms_rutgers_unsupported_no_matching(self, mock_merge, roms_rutgers_config):
+        """Test run() raises NotImplementedError for ROMS_RUTGERS with no_matching=True."""
+        workflow = WorkflowModelObs(roms_rutgers_config)
         
         with pytest.raises(NotImplementedError, match="does not support.*skipping time matching"):
             workflow.run(trim_obs=False, no_matching=True, parquet_only=True)
     
     @patch.object(WorkflowModelObs, 'merge_model_obs_to_parquet')
-    def test_run_validates_options_roms_unsupported_force_obs_time(self, mock_merge, roms_config):
-        """Test run() raises NotImplementedError for ROMS with force_obs_time=True."""
-        workflow = WorkflowModelObs(roms_config)
+    def test_run_validates_options_roms_rutgers_unsupported_force_obs_time(self, mock_merge, roms_rutgers_config):
+        """Test run() raises NotImplementedError for ROMS_RUTGERS with force_obs_time=True."""
+        workflow = WorkflowModelObs(roms_rutgers_config)
         
         with pytest.raises(NotImplementedError, match="does not support.*observations reference time"):
             workflow.run(trim_obs=False, force_obs_time=True, parquet_only=True)
     
     @patch.object(WorkflowModelObs, 'merge_model_obs_to_parquet')
     @patch.object(WorkflowModelObs, 'process_files')
-    def test_run_validates_options_roms_all_false(self, mock_process, mock_merge, roms_config):
-        """Test run() succeeds for ROMS when all unsupported options are False."""
-        workflow = WorkflowModelObs(roms_config)
+    def test_run_validates_options_roms_rutgers_all_false(self, mock_process, mock_merge, roms_rutgers_config):
+        """Test run() succeeds for ROMS_RUTGERS when all unsupported options are False."""
+        workflow = WorkflowModelObs(roms_rutgers_config)
         
         workflow.run(trim_obs=False, no_matching=False, force_obs_time=False, parquet_only=True)
         
@@ -178,9 +178,9 @@ class TestRunMethod:
         mock_merge.assert_called_once()
     
     @patch.object(WorkflowModelObs, 'merge_model_obs_to_parquet')
-    def test_run_validates_options_roms_multiple_unsupported(self, mock_merge, roms_config):
-        """Test run() raises NotImplementedError for ROMS with multiple unsupported options."""
-        workflow = WorkflowModelObs(roms_config)
+    def test_run_validates_options_roms_rutgers_multiple_unsupported(self, mock_merge, roms_rutgers_config):
+        """Test run() raises NotImplementedError for ROMS_RUTGERS with multiple unsupported options."""
+        workflow = WorkflowModelObs(roms_rutgers_config)
         
         with pytest.raises(NotImplementedError):
             workflow.run(trim_obs=True, no_matching=True, parquet_only=True)

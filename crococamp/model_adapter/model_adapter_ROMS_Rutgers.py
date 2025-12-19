@@ -1,4 +1,4 @@
-"""ModelAdapter class to normalize ROMS model input."""
+"""ModelAdapter class to normalize ROMS Rutgers model input."""
 
 from contextlib import contextmanager
 from collections.abc import Iterator
@@ -8,7 +8,7 @@ import xarray as xr
 
 from . import ModelAdapter, ModelAdapterCapabilities
 
-class ModelAdapterROMS(ModelAdapter):
+class ModelAdapterROMSRutgers(ModelAdapter):
     """Base class for all model normalizations
 
     Provides common functionality for model input normalization.
@@ -23,7 +23,7 @@ class ModelAdapterROMS(ModelAdapter):
     def __init__(self) -> None:
 
         # Assign ocean model name
-        self.ocean_model = "ROMS"
+        self.ocean_model = "ROMS_Rutgers"
         # Assign time_varname_name
         self.time_varname = "ocean_time"
         return
@@ -96,7 +96,7 @@ class ModelAdapterROMS(ModelAdapter):
 
         # ROMS is in PSU
         # DART's obs_seq are in PSU/1000
-        # DART's pmo for ROMS does not convert units
+        # DART's pmo for ROMS Rutgers does not convert units
         # In the future DART might move to PSU
         condition = df["type"].str.contains("SALINITY")
         df["obs"] = df["obs"].mask(condition, df["obs"] * 1000)

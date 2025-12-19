@@ -6,14 +6,14 @@ to their corresponding adapter classes.
 
 Supported models:
     - MOM6: Modular Ocean Model version 6
-    - ROMS: Regional Ocean Modeling System
+    - ROMS_Rutgers: Regional Ocean Modeling System, Rutgers flavour
 
 Usage:
     from crococamp.model_adapter.registry import create_model_adapter
     
     # Create adapter from model name
     adapter = create_model_adapter("MOM6")  # Returns ModelAdapterMOM6 instance
-    adapter = create_model_adapter("ROMS")  # Returns ModelAdapterROMS instance
+    adapter = create_model_adapter("ROMS_Rutgers")  # Returns ModelAdapterROMS_Rutgers instance
     
     # Case-insensitive and whitespace-tolerant
     adapter = create_model_adapter("  mom6  ")  # Also works
@@ -26,7 +26,7 @@ To add a new model:
 See Also:
     - ModelAdapter: Abstract base class for all adapters
     - ModelAdapterMOM6: MOM6-specific implementation
-    - ModelAdapterROMS: ROMS-specific implementation
+    - ModelAdapterROMS_Rutgers: ROMS-specific implementation
 """
 from __future__ import annotations
 
@@ -34,11 +34,11 @@ from typing import Type
 
 from .model_adapter import ModelAdapter
 from .model_adapter_MOM6 import ModelAdapterMOM6
-from .model_adapter_ROMS import ModelAdapterROMS
+from .model_adapter_ROMS_Rutgers import ModelAdapterROMSRutgers
 
 _ADAPTERS: dict[str, Type[ModelAdapter]] = {
     "mom6": ModelAdapterMOM6,
-    "roms": ModelAdapterROMS,
+    "roms_rutgers": ModelAdapterROMSRutgers,
 }
 
 def create_model_adapter(ocean_model: str, **kwargs) -> ModelAdapter:
@@ -49,7 +49,7 @@ def create_model_adapter(ocean_model: str, **kwargs) -> ModelAdapter:
     and whitespace is automatically stripped.
     
     Args:
-        ocean_model: Name of the ocean model (e.g., 'MOM6', 'ROMS'). 
+        ocean_model: Name of the ocean model (e.g., 'MOM6', 'ROMS_Rutgers'). 
                     Case-insensitive. Cannot be None.
         **kwargs: Additional keyword arguments passed to adapter constructor
                  (currently unused but reserved for future extensibility).
@@ -70,7 +70,7 @@ def create_model_adapter(ocean_model: str, **kwargs) -> ModelAdapter:
         'MOM6'
         
         >>> # Case-insensitive
-        >>> adapter = create_model_adapter("roms")
+        >>> adapter = create_model_adapter("roms_rutgers")
         >>> isinstance(adapter, ModelAdapterROMS)
         True
         
@@ -86,7 +86,7 @@ def create_model_adapter(ocean_model: str, **kwargs) -> ModelAdapter:
         ValueError: Unknown ocean_model='invalid'. Allowed values: mom6, roms.
     """
     if ocean_model is None:
-        raise ValueError("ocean_model is required (e.g. 'MOM6' or 'ROMS').")
+        raise ValueError("ocean_model is required (e.g. 'MOM6' or 'ROMS_Rutgers').")
 
     key = ocean_model.strip().lower()
     try:

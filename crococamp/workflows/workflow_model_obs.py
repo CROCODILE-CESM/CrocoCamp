@@ -541,7 +541,7 @@ class WorkflowModelObs(workflow.Workflow):
         sort_order = ['time', 'longitude', 'latitude', 'vertical']
         merged = merged.sort_values(by=sort_order)
 
-        # DART's pmo uses different units for MOM6 and ROMS
+        # DART's pmo uses different units for MOM6 and ROMS_Rutgers
         merged = self.model_adapter.convert_units(merged)
 
         # Add diagnostic columns

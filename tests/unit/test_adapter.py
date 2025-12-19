@@ -3,7 +3,7 @@
 Tests the model adapter architecture including:
 - Adapter registry and factory function (create_model_adapter)
 - MOM6-specific adapter behavior and unit conversions
-- ROMS-specific adapter behavior and unit conversions  
+- ROMS_RUTGERS-specific adapter behavior and unit conversions  
 - Dataset opening with context managers
 - Run options validation and capabilities checking
 - Configuration key requirements per model
@@ -24,7 +24,7 @@ import xarray as xr
 
 from crococamp.model_adapter.model_adapter import ModelAdapter
 from crococamp.model_adapter.model_adapter_MOM6 import ModelAdapterMOM6
-from crococamp.model_adapter.model_adapter_ROMS import ModelAdapterROMS
+from crococamp.model_adapter.model_adapter_ROMS_Rutgers import ModelAdapterROMSRutgers
 from crococamp.model_adapter.registry import create_model_adapter
 from crococamp.workflows.workflow_model_obs import RunOptions
 
@@ -43,16 +43,16 @@ class TestModelAdapterRegistry:
         adapter = create_model_adapter("MOM6")
         assert isinstance(adapter, ModelAdapterMOM6)
 
-    def test_create_roms_adapter_lowercase(self):
-        """Test creating ROMS adapter with lowercase name."""
-        adapter = create_model_adapter("roms")
-        assert isinstance(adapter, ModelAdapterROMS)
+    def test_create_roms_rutgers_adapter_lowercase(self):
+        """Test creating ROMS_Rutgers adapter with lowercase name."""
+        adapter = create_model_adapter("roms_rutgers")
+        assert isinstance(adapter, ModelAdapterROMSRutgers)
         assert adapter.time_varname == "ocean_time"
 
-    def test_create_roms_adapter_uppercase(self):
-        """Test creating ROMS adapter with uppercase name."""
-        adapter = create_model_adapter("ROMS")
-        assert isinstance(adapter, ModelAdapterROMS)
+    def test_create_roms_rutgers_adapter_uppercase(self):
+        """Test creating ROMS_Rutgers adapter with uppercase name."""
+        adapter = create_model_adapter("ROMS_Rutgers")
+        assert isinstance(adapter, ModelAdapterROMSRutgers)
 
     def test_create_adapter_invalid_model(self):
         """Test creating adapter with invalid model name raises error."""
@@ -85,7 +85,7 @@ def create_tmp_MOM6_nc(tmp_path):
     ds_template.to_netcdf(model_nc)
 
 @pytest.fixture
-def create_tmp_ROMS_nc(tmp_path):
+def create_tmp_ROMS_Rutgers_nc(tmp_path):
     """Create temporary netcdf file to read from disk"""
 
     original_dir = os.getcwd()
@@ -283,13 +283,13 @@ class TestModelAdapterMOM6:
         model_adapter.validate_run_options(run_opts)
 
 
-class TestModelAdapterROMS:
-    """Test ModelAdapterROMS methods"""
+class TestModelAdapterROMSRutgers:
+    """Test ModelAdapterROMSRutgers methods"""
 
     def test_init(self):
         """Test constructor"""
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
 
         assert isinstance(model_adapter.time_varname, str)
         assert model_adapter.time_varname == "ocean_time"
@@ -305,7 +305,7 @@ class TestModelAdapterROMS:
             'layer_name'
         ]
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         required_keys = model_adapter.get_required_config_keys()
         
         assert isinstance(required_keys, list)
@@ -321,23 +321,23 @@ class TestModelAdapterROMS:
             'debug'
         ]
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         common_model_keys = model_adapter.get_common_model_keys()
         
         assert isinstance(common_model_keys, list)
         assert all(isinstance(item, str) for item in common_model_keys)
         assert common_model_keys == target_keys
 
-    def test_open_dataset_ctx(self, create_tmp_ROMS_nc, tmp_path):
+    def test_open_dataset_ctx(self, create_tmp_ROMS_Rutgers_nc, tmp_path):
         """Test open_dataset_ctx updates calendar and time varname"""
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
 
         model_nc = tmp_path / "model.nc"
         with model_adapter.open_dataset_ctx(model_nc) as ds:
             assert "time" in ds.coords
 
     def test_convert_units(self):
-        """Test convert_units converts ROMS salinity from PSU/1000 to PSU."""
+        """Test convert_units converts ROMS_Rutgers salinity from PSU/1000 to PSU."""
         obs_types = [
             "BOTTLE_SALINITY",
             "ARGO_SALINITY",
@@ -363,7 +363,7 @@ class TestModelAdapterROMS:
             'type': obs_types
         })
          
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         df = model_adapter.convert_units(mock_df)
 
         assert_frame_equal(df, target_df)
@@ -376,7 +376,7 @@ class TestModelAdapterROMS:
             'type': ['SALINITY', 'TEMPERATURE', 'SALINITY']
         })
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         df = model_adapter.convert_units(mock_df)
 
         assert pd.isna(df.loc[1, 'interpolated_model'])
@@ -391,7 +391,7 @@ class TestModelAdapterROMS:
             'type': pd.Series(['SALINITY', 'TEMPERATURE'], dtype='object')
         })
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         df = model_adapter.convert_units(mock_df)
 
         assert df['interpolated_model'].dtype == np.float64
@@ -406,7 +406,7 @@ class TestModelAdapterROMS:
             'type': ['SALINITY', 'TEMPERATURE', 'ARGO_SALINITY']
         })
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         df = model_adapter.convert_units(mock_df)
 
         assert np.isclose(df.loc[0, 'obs'], 20.1)
@@ -421,7 +421,7 @@ class TestModelAdapterROMS:
             'type': pd.Series([], dtype=object)
         })
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         df = model_adapter.convert_units(mock_df)
 
         assert len(df) == 0
@@ -434,15 +434,15 @@ class TestModelAdapterROMS:
             coords={"ocean_time": [0, 1], "lat": [1, 2, 3]}
         )
 
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         renamed_ds = model_adapter.rename_time_varname(ds)
 
         assert "time" in renamed_ds.coords
         assert "ocean_time" not in renamed_ds.coords
 
-    def test_open_dataset_ctx_file_closure(self, create_tmp_ROMS_nc, tmp_path):
+    def test_open_dataset_ctx_file_closure(self, create_tmp_ROMS_Rutgers_nc, tmp_path):
         """Test open_dataset_ctx closes file after use."""
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         model_nc = tmp_path / "model.nc"
 
         with model_adapter.open_dataset_ctx(model_nc) as ds:
@@ -450,7 +450,7 @@ class TestModelAdapterROMS:
 
     def test_open_dataset_ctx_nonexistent_file(self, tmp_path):
         """Test open_dataset_ctx raises error for nonexistent file."""
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
         nonexistent = tmp_path / "nonexistent.nc"
 
         with pytest.raises(FileNotFoundError):
@@ -459,7 +459,7 @@ class TestModelAdapterROMS:
 
     def test_validate_run_options_all_true(self):
         """Test that not all run options are supported"""
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
 
         run_opts = RunOptions(
             trim_obs = True,
@@ -472,7 +472,7 @@ class TestModelAdapterROMS:
 
     def test_validate_run_options_all_false(self):
         """Test that if all run options are false, they are valid"""
-        model_adapter = create_model_adapter("roms")
+        model_adapter = create_model_adapter("roms_rutgers")
 
         run_opts = RunOptions(
             trim_obs = False,
