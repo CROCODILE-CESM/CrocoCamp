@@ -6,13 +6,18 @@ from typing import Any, Dict, List
 import pandas as pd
 import xarray as xr
 
-from . import model_adapter
+from . import ModelAdapter, ModelAdapterCapabilities
 
-class ModelAdapterMOM6(model_adapter.ModelAdapter):
+class ModelAdapterMOM6(ModelAdapter):
     """Base class for all model normalizations
 
     Provides common functionality for model input normalization.
     """
+    capabilities = ModelAdapterCapabilities(
+        supports_trim_obs = True,
+        supports_no_matching = True,
+        supports_force_obs_time = True
+    )
 
     def __init__(self) -> None:
 
@@ -93,15 +98,3 @@ class ModelAdapterMOM6(model_adapter.ModelAdapter):
     
         return df
 
-    def validate_run_arguments(self) -> None:
-        """Validate that model can use provided arguments specified with
-        workflow.run()
-        
-        Raise:
-            ValueError if provided argument is not compatible and is set to True
-            Warning if provided argument is not compatible but is set to False
-
-        """
-    
-        return False
-    

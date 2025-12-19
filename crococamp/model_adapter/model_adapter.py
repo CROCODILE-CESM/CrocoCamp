@@ -1,18 +1,34 @@
 """Base ModelAdapter class to normalize model input."""
 
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any, Dict, List
+if TYPE_CHECKING:
+    from crococamp.workflows.types import RunOptions
+
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from collections.abc import Iterator
-from typing import Any, Dict, List
 
 import dask.dataframe as dd
 import xarray as xr
+
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class ModelAdapterCapabilities:
+    supports_trim_obs: bool = True
+    supports_no_matching: bool = True
+    supports_force_obs_time: bool = True
+
 
 class ModelAdapter(ABC):
     """Base class for all model normalizations
 
     Provides common functionality for model input normalization.
     """
+
+    # run arguments
+    capabilities: ModelAdapterCapabilities = ModelAdapterCapabilities()
 
     def __init__(self) -> None:
 
@@ -40,8 +56,7 @@ class ModelAdapter(ABC):
     
         return
 
-    @abstractmethod
-    def validate_run_arguments(self) -> None:
+    def validate_run_options(self, opts: RunOptions) -> None:
         """Validate that model can use provided arguments specified with
         workflow.run()
         
@@ -50,8 +65,24 @@ class ModelAdapter(ABC):
             Warning if provided argument is not compatible but is set to False
 
         """
-    
-        return False
+        
+        cap = self.capabilities
+        if opts.trim_obs and not cap.supports_trim_obs:
+            raise NotImplementedError(
+                f"{self.ocean_model} adapter does not support "
+                f"observation files trimming."
+            )
+        if opts.no_matching and not cap.supports_no_matching:
+            raise NotImplementedError(
+                f"{self.ocean_model} adapter does not support "
+                f"skipping time matching."
+            )
+        if opts.force_obs_time and not cap.supports_force_obs_time:
+            raise NotImplementedError(
+                f"{self.ocean_model} adapter does not support "
+                f"assigning the observations reference time to model files."
+            )       
+
 
     @abstractmethod
     def get_common_model_keys(self) -> List[str]:

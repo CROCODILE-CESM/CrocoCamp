@@ -22,6 +22,13 @@ from ..io import obs_seq_tools
 from ..utils import config as config_utils
 from ..utils import namelist
 
+from dataclasses import dataclass
+@dataclass(frozen=True)
+class RunOptions:
+    # default run options for largest compatibility
+    trim_obs: bool = False
+    no_matching: bool = False
+    force_obs_time: bool = False
 
 class WorkflowModelObs(workflow.Workflow):
     """Model-observation comparison workflow.
@@ -60,6 +67,14 @@ class WorkflowModelObs(workflow.Workflow):
         Returns:
             Number of files processed
         """
+
+        run_opts = RunOptions(
+            trim_obs = trim_obs,
+            no_matching = no_matching,
+            force_obs_time = force_obs_time
+        )
+        self.model_adapter.validate_run_options(run_opts)
+        
         if clear_output:
             print("Clearing all output folders...")
             output_folders = [
