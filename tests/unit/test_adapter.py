@@ -14,6 +14,7 @@ from crococamp.model_adapter.model_adapter import ModelAdapter
 from crococamp.model_adapter.model_adapter_MOM6 import ModelAdapterMOM6
 from crococamp.model_adapter.model_adapter_ROMS import ModelAdapterROMS
 from crococamp.model_adapter.registry import create_model_adapter
+from crococamp.workflows.workflow_model_obs import RunOptions
 
 
 class TestModelAdapterRegistry:
@@ -55,6 +56,7 @@ class TestModelAdapterRegistry:
         """Test creating adapter handles whitespace in model name."""
         adapter = create_model_adapter("  MOM6  ")
         assert isinstance(adapter, ModelAdapterMOM6)
+
 
 @pytest.fixture
 def create_tmp_MOM6_nc(tmp_path):
@@ -246,11 +248,28 @@ class TestModelAdapterMOM6:
             with model_adapter.open_dataset_ctx(nonexistent) as ds:
                 pass
 
-    def test_validate_run_arguments_returns_false(self):
-        """Test validate_run_arguments returns False for MOM6."""
+    def test_validate_run_options_all_true(self):
+        """Test that all run options are validated"""
         model_adapter = create_model_adapter("mom6")
-        result = model_adapter.validate_run_arguments()
-        assert result is False
+
+        run_opts = RunOptions(
+            trim_obs = True,
+            no_matching = True,
+            force_obs_time = True
+        )
+        model_adapter.validate_run_options(run_opts)
+
+    def test_validate_run_options_some_false(self):
+        """Test that some run options are valid if false"""
+        model_adapter = create_model_adapter("mom6")
+
+        run_opts = RunOptions(
+            trim_obs = True,
+            no_matching = False,
+            force_obs_time = False
+        )
+        model_adapter.validate_run_options(run_opts)
+
 
 class TestModelAdapterROMS:
     """Test ModelAdapterROMS methods"""
@@ -426,8 +445,26 @@ class TestModelAdapterROMS:
             with model_adapter.open_dataset_ctx(nonexistent) as ds:
                 pass
 
-    def test_validate_run_arguments_returns_false(self):
-        """Test validate_run_arguments returns False for ROMS."""
+    def test_validate_run_options_all_true(self):
+        """Test that not all run options are supported"""
         model_adapter = create_model_adapter("roms")
-        result = model_adapter.validate_run_arguments()
-        assert result is False
+
+        run_opts = RunOptions(
+            trim_obs = True,
+            no_matching = True,
+            force_obs_time = True
+        )
+
+        with pytest.raises(NotImplementedError):
+            model_adapter.validate_run_options(run_opts)
+
+    def test_validate_run_options_all_false(self):
+        """Test that if all run options are false, they are valid"""
+        model_adapter = create_model_adapter("roms")
+
+        run_opts = RunOptions(
+            trim_obs = False,
+            no_matching = False,
+            force_obs_time = False
+        )
+        model_adapter.validate_run_options(run_opts)
