@@ -7,6 +7,7 @@ import pandas as pd
 import xarray as xr
 
 from . import ModelAdapter, ModelAdapterCapabilities
+from ..utils import config as config_utils
 
 class ModelAdapterROMSRutgers(ModelAdapter):
     """Base class for all model normalizations
@@ -59,6 +60,17 @@ class ModelAdapterROMSRutgers(ModelAdapter):
             'debug'
         ]
 
+
+    def validate_paths(self, config, run_opts) -> None:
+        """Validate paths provided in config file."""
+
+        super().validate_paths(config, run_opts)
+
+        # ROMS specific validation
+        print("  Validating roms model file...")
+        config_utils.check_nc_file(config['roms_filename'], "roms_filename")
+
+        return
 
     @contextmanager
     def open_dataset_ctx(self, path: str) -> Iterator[xr.Dataset]:

@@ -7,6 +7,7 @@ import pandas as pd
 import xarray as xr
 
 from . import ModelAdapter, ModelAdapterCapabilities
+from ..utils import config as config_utils
 
 class ModelAdapterMOM6(ModelAdapter):
     """Base class for all model normalizations
@@ -55,13 +56,25 @@ class ModelAdapterMOM6(ModelAdapter):
         """
 
         return [
-            'model_files_folder', 
-            'obs_seq_in_folder', 
-            'output_folder',
-            'roms_filename',
-            'perfect_model_obs_dir', 
-            'parquet_folder'
+            'template_file',
+            'static_file',
+            'ocean_geometry',
+            'model_state_variables',
+            'layer_name'
         ]
+
+    def validate_paths(self, config, run_opts) -> None:
+        """Validate paths provided in config file."""
+
+        super().validate_paths(config, run_opts)
+
+        # MOM6 specific paths
+        print("  Validating .nc files for model_nml...")
+        config_utils.check_nc_file(config['template_file'], "template_file")
+        config_utils.check_nc_file(config['static_file'], "static_file")
+        config_utils.check_nc_file(config['ocean_geometry'], "ocean_geometry")
+        
+        return
 
     @contextmanager
     def open_dataset_ctx(self, path: str) -> Iterator[xr.Dataset]:

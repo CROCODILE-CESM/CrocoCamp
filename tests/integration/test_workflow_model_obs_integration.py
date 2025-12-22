@@ -365,48 +365,12 @@ class TestWorkflowModelObsRunMethod:
 
 
 class TestWorkflowModelObsConfigValidation:
-    """Test workflow configuration validation."""
+    """Test workflow configuration validation.
     
-    def test_validate_workflow_paths(self, workflow_config, mock_obs_seq_files):
-        """Test path validation in workflow."""
-        from crococamp.workflows.workflow_model_obs import WorkflowModelObs
-        
-        # Create at least one model file
-        model_folder = Path(workflow_config['model_files_folder'])
-        (model_folder / "model.nc").touch()
-        
-        workflow = WorkflowModelObs(workflow_config)
-        
-        # Should not raise if all paths exist
-        workflow._validate_workflow_paths(trim_obs=False)
-    
-    def test_missing_model_files_folder(self, workflow_config):
-        """Test error when model files folder is missing."""
-        from crococamp.workflows.workflow_model_obs import WorkflowModelObs
-        
-        # Point to non-existent folder
-        workflow_config['model_files_folder'] = '/non/existent/path'
-        
-        workflow = WorkflowModelObs(workflow_config)
-        
-        with pytest.raises((FileNotFoundError, ValueError, NotADirectoryError)):
-            workflow._validate_workflow_paths(trim_obs=False)
-    
-    def test_missing_required_netcdf_files(self, workflow_config, tmp_path, mock_obs_seq_files):
-        """Test error when required NetCDF files are missing."""
-        from crococamp.workflows.workflow_model_obs import WorkflowModelObs
-        
-        # Create at least one model file so model folder check passes
-        model_folder = Path(workflow_config['model_files_folder'])
-        (model_folder / "model.nc").touch()
-        
-        # Point to non-existent template file
-        workflow_config['template_file'] = str(tmp_path / "missing_template.nc")
-        
-        workflow = WorkflowModelObs(workflow_config)
-        
-        with pytest.raises(FileNotFoundError):
-            workflow._validate_workflow_paths(trim_obs=False)
+    Note: Path validation has been moved to ModelAdapter classes.
+    See tests/unit/test_adapter.py for validate_paths() tests.
+    """
+    pass
 
 
 class TestWorkflowModelObsNamelistOperations:

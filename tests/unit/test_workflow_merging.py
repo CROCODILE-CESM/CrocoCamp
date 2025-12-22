@@ -449,7 +449,9 @@ class TestMergeModelObsToParquet:
         
         assert mock_merge.call_count == 2
         captured = capsys.readouterr()
-        assert "Validating parquet_folder" in captured.out
+        assert "Total number of obs" in captured.out
+        assert "Succesfull interpolations" in captured.out
+        assert "Failed interpolations" in captured.out
     
     @patch('crococamp.workflows.workflow_model_obs.WorkflowModelObs._merge_pair_to_parquet')
     @patch('crococamp.workflows.workflow_model_obs.WorkflowModelObs._set_model_obs_df')

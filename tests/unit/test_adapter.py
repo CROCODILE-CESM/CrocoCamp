@@ -282,6 +282,398 @@ class TestModelAdapterMOM6:
         model_adapter.validate_run_options(run_opts)
 
 
+class TestModelAdapterPathValidation:
+    """Test path validation in ModelAdapter and subclasses."""
+
+    def test_mom6_validate_paths_success(self, tmp_path):
+        """Test MOM6 validate_paths with all valid paths."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        output_folder = tmp_path / "output"
+        tmp_folder = tmp_path / "tmp"
+        parquet_folder = tmp_path / "parquet"
+        
+        template_nc = tmp_path / "template.nc"
+        template_nc.touch()
+        static_nc = tmp_path / "static.nc"
+        static_nc.touch()
+        geometry_nc = tmp_path / "ocean_geometry.nc"
+        geometry_nc.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(output_folder),
+            'tmp_folder': str(tmp_folder),
+            'parquet_folder': str(parquet_folder),
+            'template_file': str(template_nc),
+            'static_file': str(static_nc),
+            'ocean_geometry': str(geometry_nc)
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        model_adapter.validate_paths(config, run_opts)
+        
+        assert Path(output_folder).exists()
+        assert Path(tmp_folder).exists()
+        assert Path(parquet_folder).exists()
+
+    def test_mom6_validate_paths_creates_output_folders(self, tmp_path):
+        """Test MOM6 validate_paths creates missing output folders."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        template_nc = tmp_path / "template.nc"
+        template_nc.touch()
+        static_nc = tmp_path / "static.nc"
+        static_nc.touch()
+        geometry_nc = tmp_path / "ocean_geometry.nc"
+        geometry_nc.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(template_nc),
+            'static_file': str(static_nc),
+            'ocean_geometry': str(geometry_nc)
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        model_adapter.validate_paths(config, run_opts)
+        
+        assert Path(config['output_folder']).exists()
+        assert Path(config['tmp_folder']).exists()
+        assert Path(config['parquet_folder']).exists()
+
+    def test_mom6_validate_paths_with_trim_obs(self, tmp_path):
+        """Test MOM6 validate_paths creates trimmed_obs_folder when trim_obs=True."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        template_nc = tmp_path / "template.nc"
+        template_nc.touch()
+        static_nc = tmp_path / "static.nc"
+        static_nc.touch()
+        geometry_nc = tmp_path / "ocean_geometry.nc"
+        geometry_nc.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(template_nc),
+            'static_file': str(static_nc),
+            'ocean_geometry': str(geometry_nc)
+        }
+        
+        run_opts = RunOptions(trim_obs=True, no_matching=False, force_obs_time=False)
+        
+        model_adapter.validate_paths(config, run_opts)
+        
+        assert 'trimmed_obs_folder' in config
+        assert Path(config['trimmed_obs_folder']).exists()
+
+    def test_mom6_validate_paths_missing_model_folder(self, tmp_path):
+        """Test MOM6 validate_paths raises error for missing model folder."""
+        model_adapter = create_model_adapter("mom6")
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        config = {
+            'model_files_folder': str(tmp_path / "nonexistent"),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(tmp_path / "template.nc"),
+            'static_file': str(tmp_path / "static.nc"),
+            'ocean_geometry': str(tmp_path / "ocean_geometry.nc")
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        with pytest.raises(NotADirectoryError):
+            model_adapter.validate_paths(config, run_opts)
+
+    def test_mom6_validate_paths_empty_model_folder(self, tmp_path):
+        """Test MOM6 validate_paths raises error for empty model folder."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(tmp_path / "template.nc"),
+            'static_file': str(tmp_path / "static.nc"),
+            'ocean_geometry': str(tmp_path / "ocean_geometry.nc")
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        with pytest.raises(ValueError, match="empty"):
+            model_adapter.validate_paths(config, run_opts)
+
+    def test_mom6_validate_paths_non_nc_files_in_model_folder(self, tmp_path):
+        """Test MOM6 validate_paths raises error for non-.nc files in model folder."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.txt").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(tmp_path / "template.nc"),
+            'static_file': str(tmp_path / "static.nc"),
+            'ocean_geometry': str(tmp_path / "ocean_geometry.nc")
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        with pytest.raises(ValueError, match="non-.nc files"):
+            model_adapter.validate_paths(config, run_opts)
+
+    def test_mom6_validate_paths_missing_template_file(self, tmp_path):
+        """Test MOM6 validate_paths raises error for missing template file."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        static_nc = tmp_path / "static.nc"
+        static_nc.touch()
+        geometry_nc = tmp_path / "ocean_geometry.nc"
+        geometry_nc.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(tmp_path / "missing_template.nc"),
+            'static_file': str(static_nc),
+            'ocean_geometry': str(geometry_nc)
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        with pytest.raises(FileNotFoundError, match="template_file"):
+            model_adapter.validate_paths(config, run_opts)
+
+    def test_mom6_validate_paths_non_nc_template_file(self, tmp_path):
+        """Test MOM6 validate_paths raises error for non-.nc template file."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        template_txt = tmp_path / "template.txt"
+        template_txt.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(template_txt),
+            'static_file': str(tmp_path / "static.nc"),
+            'ocean_geometry': str(tmp_path / "ocean_geometry.nc")
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        with pytest.raises(ValueError, match="not a .nc file"):
+            model_adapter.validate_paths(config, run_opts)
+
+    def test_roms_validate_paths_success(self, tmp_path):
+        """Test ROMS validate_paths with all valid paths."""
+        model_adapter = create_model_adapter("roms_rutgers")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "roms_avg_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        roms_nc = tmp_path / "roms_grid.nc"
+        roms_nc.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'roms_filename': str(roms_nc)
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        model_adapter.validate_paths(config, run_opts)
+        
+        assert Path(config['output_folder']).exists()
+
+    def test_roms_validate_paths_missing_roms_file(self, tmp_path):
+        """Test ROMS validate_paths raises error for missing roms_filename."""
+        model_adapter = create_model_adapter("roms_rutgers")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "roms_avg_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'roms_filename': str(tmp_path / "missing_roms.nc")
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        with pytest.raises(FileNotFoundError, match="roms_filename"):
+            model_adapter.validate_paths(config, run_opts)
+
+    def test_base_adapter_sets_default_trimmed_obs_folder(self, tmp_path):
+        """Test base adapter sets default trimmed_obs_folder."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        template_nc = tmp_path / "template.nc"
+        template_nc.touch()
+        static_nc = tmp_path / "static.nc"
+        static_nc.touch()
+        geometry_nc = tmp_path / "ocean_geometry.nc"
+        geometry_nc.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(template_nc),
+            'static_file': str(static_nc),
+            'ocean_geometry': str(geometry_nc)
+        }
+        
+        run_opts = RunOptions(trim_obs=True, no_matching=False, force_obs_time=False)
+        
+        model_adapter.validate_paths(config, run_opts)
+        
+        assert config['trimmed_obs_folder'] == 'trimmed_obs_seq'
+
+    def test_base_adapter_sets_default_input_nml_bck(self, tmp_path):
+        """Test base adapter sets default input_nml_bck."""
+        model_adapter = create_model_adapter("mom6")
+        
+        model_folder = tmp_path / "model_files"
+        model_folder.mkdir()
+        (model_folder / "model_01.nc").touch()
+        
+        obs_folder = tmp_path / "obs"
+        obs_folder.mkdir()
+        (obs_folder / "obs_01.in").touch()
+        
+        template_nc = tmp_path / "template.nc"
+        template_nc.touch()
+        static_nc = tmp_path / "static.nc"
+        static_nc.touch()
+        geometry_nc = tmp_path / "ocean_geometry.nc"
+        geometry_nc.touch()
+        
+        config = {
+            'model_files_folder': str(model_folder),
+            'obs_seq_in_folder': str(obs_folder),
+            'output_folder': str(tmp_path / "output"),
+            'tmp_folder': str(tmp_path / "tmp"),
+            'parquet_folder': str(tmp_path / "parquet"),
+            'template_file': str(template_nc),
+            'static_file': str(static_nc),
+            'ocean_geometry': str(geometry_nc)
+        }
+        
+        run_opts = RunOptions(trim_obs=False, no_matching=False, force_obs_time=False)
+        
+        model_adapter.validate_paths(config, run_opts)
+        
+        assert config['input_nml_bck'] == 'input.nml.backup'
+
+
 class TestModelAdapterROMSRutgers:
     """Test ModelAdapterROMSRutgers methods"""
 

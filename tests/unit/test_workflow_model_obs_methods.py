@@ -206,12 +206,12 @@ class TestProcessFiles:
             workflow.process_files()
     
     @patch.object(WorkflowModelObs, '_process_model_obs_pair')
-    @patch.object(WorkflowModelObs, '_validate_workflow_paths')
     @patch.object(WorkflowModelObs, '_print_workflow_config')
     @patch.object(WorkflowModelObs, '_initialize_model_namelist')
     @patch('crococamp.workflows.workflow_model_obs.file_utils.get_sorted_files')
-    def test_process_files_no_matching_mode(self, mock_get_files, mock_init_nml,
-                                           mock_print, mock_validate, mock_process_pair, 
+    @patch('crococamp.model_adapter.model_adapter_MOM6.ModelAdapterMOM6.validate_paths')
+    def test_process_files_no_matching_mode(self, mock_validate_paths, mock_get_files, 
+                                           mock_init_nml, mock_print, mock_process_pair, 
                                            tmp_path):
         """Test process_files with no_matching=True processes files in pairs."""
         config = {
@@ -298,61 +298,12 @@ class TestPrintWorkflowConfig:
 
 
 class TestValidateWorkflowPaths:
-    """Tests for _validate_workflow_paths() method."""
+    """Tests for path validation.
     
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_nc_file')
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_or_create_folder')
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_nc_files_only')
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_directory_not_empty')
-    def test_validate_workflow_paths_basic(self, mock_check_dir, mock_check_nc_only,
-                                          mock_create_folder, mock_check_nc, tmp_path):
-        """Test _validate_workflow_paths validates all required paths."""
-        config = {
-            'ocean_model': 'MOM6',
-            'model_files_folder': str(tmp_path / 'model'),
-            'obs_seq_in_folder': str(tmp_path / 'obs'),
-            'output_folder': str(tmp_path / 'output'),
-            'template_file': 'template.nc',
-            'static_file': 'static.nc',
-            'ocean_geometry': 'ocean.nc',
-            'perfect_model_obs_dir': str(tmp_path / 'dart'),
-            'parquet_folder': str(tmp_path / 'parquet'),
-            'tmp_folder': str(tmp_path / 'tmp'),
-        }
-        
-        workflow = WorkflowModelObs(config)
-        workflow._validate_workflow_paths(trim_obs=False)
-        
-        assert mock_check_dir.call_count == 2
-        assert mock_check_nc_only.call_count == 1
-        assert mock_create_folder.call_count == 3
-        assert mock_check_nc.call_count == 3
-    
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_nc_file')
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_or_create_folder')
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_nc_files_only')
-    @patch('crococamp.workflows.workflow_model_obs.config_utils.check_directory_not_empty')
-    def test_validate_workflow_paths_with_trim_obs(self, mock_check_dir, mock_check_nc_only,
-                                                   mock_create_folder, mock_check_nc, tmp_path):
-        """Test _validate_workflow_paths creates trimmed_obs_folder when trim_obs=True."""
-        config = {
-            'ocean_model': 'MOM6',
-            'model_files_folder': str(tmp_path / 'model'),
-            'obs_seq_in_folder': str(tmp_path / 'obs'),
-            'output_folder': str(tmp_path / 'output'),
-            'template_file': 'template.nc',
-            'static_file': 'static.nc',
-            'ocean_geometry': 'ocean.nc',
-            'perfect_model_obs_dir': str(tmp_path / 'dart'),
-            'parquet_folder': str(tmp_path / 'parquet'),
-            'tmp_folder': str(tmp_path / 'tmp'),
-        }
-        
-        workflow = WorkflowModelObs(config)
-        workflow._validate_workflow_paths(trim_obs=True)
-        
-        assert 'trimmed_obs_folder' in workflow.config
-        assert mock_create_folder.call_count == 4
+    Note: Path validation has been moved to ModelAdapter classes.
+    See tests/unit/test_adapter.py::TestModelAdapterPathValidation for tests.
+    """
+    pass
 
 
 class TestInitializeModelNamelist:

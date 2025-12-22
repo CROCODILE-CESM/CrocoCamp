@@ -68,13 +68,14 @@ class WorkflowModelObs(workflow.Workflow):
             Number of files processed
         """
 
-        run_opts = RunOptions(
+        self.run_opts = RunOptions(
             trim_obs = trim_obs,
             no_matching = no_matching,
             force_obs_time = force_obs_time
         )
-        self.model_adapter.validate_run_options(run_opts)
-        
+
+        self.model_adapter.validate_run_options(self.run_opts)
+
         if clear_output:
             print("Clearing all output folders...")
             output_folders = [
@@ -129,7 +130,13 @@ class WorkflowModelObs(workflow.Workflow):
         self._print_workflow_config(trim_obs)
 
         # Validate configuration parameters
-        self._validate_workflow_paths(trim_obs)
+        if not hasattr(self, 'run_opts'):
+            self.run_opts = RunOptions(
+                trim_obs = trim_obs,
+                no_matching = no_matching,
+                force_obs_time = force_obs_time
+            )
+        self.model_adapter.validate_paths(self.config, self.run_opts)
 
         # Get and validate file lists
         model_in_files = file_utils.get_sorted_files(self.config['model_files_folder'], "*.nc")
@@ -170,9 +177,6 @@ class WorkflowModelObs(workflow.Workflow):
             obs_folder = self.config['obs_seq_in_folder']
             print(self.config['obs_seq_in_folder'])
 
-        print(f"  Validating parquet_folder {parquet_folder}...")
-        config_utils.check_or_create_folder(parquet_folder, "parquet_folder")
-
         perf_obs_files = sorted(glob.glob(os.path.join(output_folder, "obs_seq*.out")))
         orig_obs_files = sorted(glob.glob(os.path.join(obs_folder, "*")))
 
@@ -208,47 +212,10 @@ class WorkflowModelObs(workflow.Workflow):
         print(f"    model_files_folder: {self.config['model_files_folder']}")
         print(f"    obs_seq_in_folder: {self.config['obs_seq_in_folder']}")
         print(f"    output_folder: {self.config['output_folder']}")
-        # print(f"    template_file: {self.config['template_file']}")
-        # print(f"    static_file: {self.config['static_file']}")
-        # print(f"    ocean_geometry: {self.config['ocean_geometry']}")
         print(f"    input_nml_bck: {self.config.get('input_nml_bck', 'input.nml.backup')}")
         print(f"    tmp_folder: {self.config['tmp_folder']}")
         if trim_obs:
             print(f"    trimmed_obs_folder: {self.config.get('trimmed_obs_folder', 'trimmed_obs_seq')}")
-    
-    def _validate_workflow_paths(self, trim_obs: bool) -> None:
-        """Validate workflow paths and create necessary directories."""
-        # Validate input directories
-        print("  Validating model_files_folder...")
-        config_utils.check_directory_not_empty(self.config['model_files_folder'], "model_files_folder")
-        config_utils.check_nc_files_only(self.config['model_files_folder'], "model_files_folder")
-
-        print("  Validating obs_seq_in_folder...")
-        config_utils.check_directory_not_empty(self.config['obs_seq_in_folder'], "obs_seq_in_folder")
-
-        print("  Validating output_folder...")
-        config_utils.check_or_create_folder(self.config['output_folder'], "output_folder")
-
-        print("  Validating tmp_folder...")
-        config_utils.check_or_create_folder(self.config['tmp_folder'], "tmp_folder")
-
-        if trim_obs:
-            print("  Validating trimmed_obs_folder...")
-            trimmed_obs_folder = self.config.get('trimmed_obs_folder', 'trimmed_obs_seq')
-            self.config['trimmed_obs_folder'] = trimmed_obs_folder
-            config_utils.check_or_create_folder(trimmed_obs_folder, "trimmed_obs_folder")
-
-        # Set default backup folder
-        input_nml_bck = self.config.get('input_nml_bck', 'input.nml.backup')
-        self.config['input_nml_bck'] = input_nml_bck
-        
-        print("  Validating input_nml_bck...")
-        config_utils.check_or_create_folder(input_nml_bck, "input_nml_bck")
-
-        print("  Validating .nc files for model_nml...")
-        config_utils.check_nc_file(self.config['template_file'], "template_file")
-        config_utils.check_nc_file(self.config['static_file'], "static_file")
-        config_utils.check_nc_file(self.config['ocean_geometry'], "ocean_geometry")
     
     def _initialize_model_namelist(self) -> None:
         """Initialize model namelist parameters."""
