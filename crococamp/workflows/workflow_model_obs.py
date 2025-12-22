@@ -276,7 +276,7 @@ class WorkflowModelObs(workflow.Workflow):
             print(f"    Processing model file {model_in_f}...")
 
             with self.model_adapter.open_dataset_ctx(model_in_f) as ds:
-                time_var = self.model_adapter.time_varname
+                time_var =  "time" # open_dataset_ctx() renames model time varname to 'time'
                 snapshots_nb = ds.sizes[time_var]
                 print(f"      model has {snapshots_nb} snapshots.")
                 
@@ -313,8 +313,9 @@ class WorkflowModelObs(workflow.Workflow):
 
                             if snapshots_nb > 1:
                                 # Slice out the snapshot into a temporary file
+                                model_time_varname = self.model_adapter.time_varname
                                 ncks = [
-                                    "ncks", "-d", f"{time_var},{t_id}",
+                                    "ncks", "-d", f"{model_time_varname},{t_id}",
                                     model_in_f, tmp_model_in_file
                                 ]
                                 print(f"        Calling {' '.join(ncks)}")
