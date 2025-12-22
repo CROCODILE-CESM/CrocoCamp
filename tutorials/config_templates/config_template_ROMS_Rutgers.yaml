@@ -1,15 +1,14 @@
 # ==========================================
 # CrocoCamp Configuration Template 
 # ==========================================
-# This template file contains all the necessary configuration parameters for running
-# CrocoCamp model-observation comparison workflows. Copy this file and modify the 
-# paths below to match your local system setup.
-#
-# For more details, see the README.md file and tutorial notebooks.
+# This template file contains all the necessary configuration parameters for
+# running CrocoCamp model-observation comparison workflows with ROMS Rutgers
+# model ouputs. Copy this file and modify the paths below to match your local
+# system setup. For more details, see the README.md file and tutorial notebooks.
 
-# Ocean model to use (required - determines which adapter is used)
-# Supported values: MOM6, ROMS
-ocean_model: MOM6
+# Ocean model to use (required)
+# Supported values: MOM6, ROMS_Rutgers
+ocean_model: ROMS_Rutgers
 
 ####### INPUT FILES #######
 # Directory containing model output files (.nc format) that you want to
@@ -17,12 +16,8 @@ ocean_model: MOM6
 model_files_folder: /path/to/model_files/
 
 # Model configuration files (all must be .nc files from your model simulation)
-# template_file: Any one of your model output files (used to read grid structure and time info)
-# static_file: Model static file containing time-invariant grid information
-# ocean_geometry: Model ocean geometry file containing grid cell areas, volumes, etc.
-template_file: /path/to/template_file
-static_file: /path/to/static_file
-ocean_geometry:  /path/to/ocean_geometry
+# roms_filename: Any one of your model output files (used to read grid structure and time info)
+roms_filename: /path/to/roms_filename
 
 # Directory containing observation files in DART observation sequence format
 obs_seq_in_folder: /path/to/obs/
@@ -67,3 +62,11 @@ time_window:
   weeks: 0       # Additional weeks
   months: 0      # Additional months (30 days/month)
   years: 0       # Additional years (365 days/year)
+
+# ROMS Rutgers variable naming and type
+# For each variable, follow the logic:
+#   <varname in nc file>: <DART quantity type> 
+variables:
+  salt: QTY_SALINITY
+  temp: QTY_TEMPERATURE
+  zeta: QTY_SEA_SURFACE_HEIGHT
