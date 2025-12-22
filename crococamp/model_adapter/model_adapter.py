@@ -27,20 +27,30 @@ class ModelAdapter(ABC):
     """Base class for all model normalizations
 
     Provides common functionality for model input normalization.
+    
+    Class attributes:
+        ocean_model: Name of the ocean model. Subclasses must define this.
+        time_varname: Name of the time variable in model files. Subclasses must define this.
+        capabilities: Model-specific capabilities configuration.
     """
-
-    # run arguments
+    ocean_model: str
+    time_varname: str
     capabilities: ModelAdapterCapabilities = ModelAdapterCapabilities()
 
     def __init__(self) -> None:
         """Initialize base ModelAdapter.
 
-        Note: This is an abstract base class. Subclasses must override this
-        method to set:
-        - self.ocean_model: Name of the ocean model (str)
-        - self.time_varname: Name of the time variable in model files (str)
+        Note: Subclasses should define ocean_model and time_varname as class attributes rather 
+        than setting them in __init__.
         """
-        pass  # Subclasses must implement
+        if not hasattr(self.__class__, 'ocean_model') or self.__class__.ocean_model is None:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} must define 'ocean_model' as a class attribute."
+            )
+        if not hasattr(self.__class__, 'time_varname') or self.__class__.time_varname is None:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} must define 'time_varname' as a class attribute"
+            )
 
     @contextmanager
     def open_dataset_ctx(self, path: str) -> Iterator[xr.Dataset]:

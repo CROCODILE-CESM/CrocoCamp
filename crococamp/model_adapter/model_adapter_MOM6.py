@@ -14,19 +14,14 @@ class ModelAdapterMOM6(ModelAdapter):
 
     Provides common functionality for model input normalization.
     """
+    ocean_model = "MOM6"
+    time_varname = "time"
+
     capabilities = ModelAdapterCapabilities(
         supports_trim_obs = True,
         supports_no_matching = True,
         supports_force_obs_time = True
     )
-
-    def __init__(self) -> None:
-
-        # Assign ocean model name
-        self.ocean_model = "MOM6"
-        # Assign time_variable_name
-        self.time_varname = "time"
-        return
 
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys.

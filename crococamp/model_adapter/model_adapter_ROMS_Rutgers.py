@@ -14,20 +14,14 @@ class ModelAdapterROMSRutgers(ModelAdapter):
 
     Provides common functionality for model input normalization.
     """
+    ocean_model = "ROMS_Rutgers"
+    time_varname = "ocean_time"
 
     capabilities = ModelAdapterCapabilities(
         supports_trim_obs = False,
         supports_no_matching = False,
         supports_force_obs_time = False
     )
-
-    def __init__(self) -> None:
-
-        # Assign ocean model name
-        self.ocean_model = "ROMS_Rutgers"
-        # Assign time_varname_name
-        self.time_varname = "ocean_time"
-        return
 
     def get_required_config_keys(self) -> List[str]:
         """Return list of required configuration keys.
