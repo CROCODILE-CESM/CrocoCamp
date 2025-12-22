@@ -7,21 +7,21 @@ ocean_model: ROMS_rutgers
 
 ####### INPUT FILES #######
 # Directory containing model .nc files to process
-model_files_folder: $CROCOCAMP_PATH/roms_tests/input/test_2/in_roms/
+model_files_folder: $CROCOCAMP_PATH/ROMS_Rutgers_demo/input/demo/in_roms/
 
 # Model configuration files (must be .nc files)
-roms_filename: $CROCOCAMP_PATH/roms_tests/input/test_2/in_roms/roms_avg_0052.nc
+roms_filename: $CROCOCAMP_PATH/ROMS_Rutgers_demo/input/demo/in_roms/roms_avg_0052.nc
 
 # Directory containing observation files
-obs_seq_in_folder: $CROCOCAMP_PATH/roms_tests/input/test_2/in_CrocoLake/
+obs_seq_in_folder: $CROCOCAMP_PATH/ROMS_Rutgers_demo/input/demo/in_CrocoLake/
 
 ####### OUTPUT FILES #######
 # Output directories for processed files (will be created if it doesn't exist)
-output_folder: $CROCOCAMP_PATH/roms_tests/output/test_2/out_obs_seq_in/
-input_nml_bck: $CROCOCAMP_PATH/roms_tests/output/test_2/input_bckp/
-trimmed_obs_folder: $CROCOCAMP_PATH/roms_testsoutput/test_2/out_trimmed_obs_seq_in/
-parquet_folder: $CROCOCAMP_PATH/roms_tests/output/test_2/out_parquet/
-tmp_folder: $CROCOCAMP_PATH/roms_tests/output/test_2/tmp/
+output_folder: $CROCOCAMP_PATH/ROMS_Rutgers_demo/output/demo/out_obs_seq_in/
+input_nml_bck: $CROCOCAMP_PATH/ROMS_Rutgers_demo/output/demo/input_bckp/
+trimmed_obs_folder: $CROCOCAMP_PATH/ROMS_Rutgers_demooutput/demo/out_trimmed_obs_seq_in/
+parquet_folder: $CROCOCAMP_PATH/ROMS_Rutgers_demo/output/demo/out_parquet/
+tmp_folder: $CROCOCAMP_PATH/ROMS_Rutgers_demo/output/demo/tmp/
 
 ####### DART #######
 # Path to DART's perfect model obs executable
