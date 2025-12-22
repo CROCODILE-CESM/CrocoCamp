@@ -1,6 +1,6 @@
 [project]
 name = "crococamp"
-version = "0.2.0"
+version = "0.3.0"
 description = "Python package for comparing ocean models with observations."
 authors = [{ name="Enrico Milanese", email="enrico.milanese@whoi.edu" }]
 readme = "README.md"

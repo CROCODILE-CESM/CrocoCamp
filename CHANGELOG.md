@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-12-22
+- Add basic support for ROMS Rutgers model output
+- New ModelAdapter class and subclasses handle model-dependent operations (paths and keys validation, xarray dataset opening, units conversion) 
+
 ## [0.2.0] - 2025-11-13
 - CrocoCamp now runs on any machine (not on NCAR's HPC only)
 - `install.sh --tutorial` downloads the data necessary to run the tutorials locally
