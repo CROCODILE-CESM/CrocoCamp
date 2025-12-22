@@ -34,6 +34,9 @@ Future:
 - Refined temporal and spatial resampling tools:
     - Customizable time windows independent of model and obs_seq.in files aggregation period.
     - Automated regridding when comparing models to gridded products (e.g. GLORYS)
+- Larger support for ROMS:
+    - Download of demo data
+    - Support for more run-time options (e.g. observations trimming)
 
 ## Installation
 
@@ -91,18 +94,25 @@ The installation script will:
 
 ## Getting Started
 
-The best way to learn CrocoCamp is through the hands-on tutorials in the `tutorials/` folder. These Jupyter notebooks guide you through:
+The best way to learn CrocoCamp is through the hands-on tutorials in the `tutorials/` folder. Demo data is available for download during installation for MOM6 workflows. The Jupyter notebooks guide you through:
 
-**Tutorial 1** (`tutorial1_MOM6-CL-comparison.ipynb`): 
+**MOM6 - Tutorial 1** (`tutorial1_MOM6-CL-comparison.ipynb`): 
 - Setting up a basic model-observation comparison workflow
 - Using MOM6 ocean model output and CrocoLake observations
 - Visualizing results with the interactive map widget
 
-**Tutorial 2** (`tutorial2_MOM6-CL-comparison-float.ipynb`):
+**MOM6 - Tutorial 2** (`tutorial2_MOM6-CL-comparison-float.ipynb`):
 - Generating custom observation files from CrocoLake 
 - Analyzing single Argo float profiles
 - Using the interactive profile widget for vertical profile comparisons
 - Passing custom configurations to profile and map widgets
+
+**ROMS - Tutorial 1** (`ROMS_tutorial_1-CL-comparison.ipynb`):
+- Setting up a basic model-observation comparison workflow
+- Generating custom observation files from CrocoLake 
+- Using ROMS Rutgers ocean model output and CrocoLake observations
+- Using the interactive profile and interactive map widgets
+
 
 These tutorials demonstrate:
 - Loading and configuring workflows with `WorkflowModelObs`
