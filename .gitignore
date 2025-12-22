@@ -7,6 +7,9 @@ __pycache__/
 sample_data/
 *.egg-info*
 
+# conda environment files different from default
+environment-*.yml
+
 # perfect_model_obs log and nml
 dart_log.nml
 dart_log.out

@@ -22,6 +22,13 @@ from ..io import obs_seq_tools
 from ..utils import config as config_utils
 from ..utils import namelist
 
+from dataclasses import dataclass
+@dataclass(frozen=True)
+class RunOptions:
+    # default run options for largest compatibility
+    trim_obs: bool = False
+    no_matching: bool = False
+    force_obs_time: bool = False
 
 class WorkflowModelObs(workflow.Workflow):
     """Model-observation comparison workflow.
@@ -45,19 +52,6 @@ class WorkflowModelObs(workflow.Workflow):
         if os.path.isfile(self.perfect_model_obs_log_file):
             os.remove(self.perfect_model_obs_log_file)
 
-    def get_required_config_keys(self) -> List[str]:
-        """Return list of required configuration keys."""
-        return [
-            'model_files_folder', 
-            'obs_seq_in_folder', 
-            'output_folder',
-            'template_file', 
-            'static_file', 
-            'ocean_geometry',
-            'perfect_model_obs_dir', 
-            'parquet_folder'
-        ]
-    
     def run(self, trim_obs: bool = True, no_matching: bool = False,
             force_obs_time: bool = False, parquet_only: bool = False,
             clear_output: bool = False) -> int:
@@ -73,6 +67,15 @@ class WorkflowModelObs(workflow.Workflow):
         Returns:
             Number of files processed
         """
+
+        self.run_opts = RunOptions(
+            trim_obs = trim_obs,
+            no_matching = no_matching,
+            force_obs_time = force_obs_time
+        )
+
+        self.model_adapter.validate_run_options(self.run_opts)
+
         if clear_output:
             print("Clearing all output folders...")
             output_folders = [
@@ -127,7 +130,13 @@ class WorkflowModelObs(workflow.Workflow):
         self._print_workflow_config(trim_obs)
 
         # Validate configuration parameters
-        self._validate_workflow_paths(trim_obs)
+        if not hasattr(self, 'run_opts'):
+            self.run_opts = RunOptions(
+                trim_obs = trim_obs,
+                no_matching = no_matching,
+                force_obs_time = force_obs_time
+            )
+        self.model_adapter.validate_paths(self.config, self.run_opts)
 
         # Get and validate file lists
         model_in_files = file_utils.get_sorted_files(self.config['model_files_folder'], "*.nc")
@@ -166,12 +175,13 @@ class WorkflowModelObs(workflow.Workflow):
             obs_folder = self.config['trimmed_obs_folder']
         else:
             obs_folder = self.config['obs_seq_in_folder']
-
-        print("  Validating parquet_folder...")
-        config_utils.check_or_create_folder(parquet_folder, "parquet_folder")
+            print(self.config['obs_seq_in_folder'])
 
         perf_obs_files = sorted(glob.glob(os.path.join(output_folder, "obs_seq*.out")))
-        orig_obs_files = sorted(glob.glob(os.path.join(obs_folder, "*obs_seq*.in")))
+        orig_obs_files = sorted(glob.glob(os.path.join(obs_folder, "*")))
+
+        print(f"  perf_obs_files: {perf_obs_files}")
+        print(f"  orig_obs_files: {orig_obs_files}")
         
         tmp_parquet_folder = os.path.join(parquet_folder, "tmp")
         os.makedirs(tmp_parquet_folder, exist_ok=True)
@@ -202,47 +212,10 @@ class WorkflowModelObs(workflow.Workflow):
         print(f"    model_files_folder: {self.config['model_files_folder']}")
         print(f"    obs_seq_in_folder: {self.config['obs_seq_in_folder']}")
         print(f"    output_folder: {self.config['output_folder']}")
-        print(f"    template_file: {self.config['template_file']}")
-        print(f"    static_file: {self.config['static_file']}")
-        print(f"    ocean_geometry: {self.config['ocean_geometry']}")
         print(f"    input_nml_bck: {self.config.get('input_nml_bck', 'input.nml.backup')}")
         print(f"    tmp_folder: {self.config['tmp_folder']}")
         if trim_obs:
             print(f"    trimmed_obs_folder: {self.config.get('trimmed_obs_folder', 'trimmed_obs_seq')}")
-    
-    def _validate_workflow_paths(self, trim_obs: bool) -> None:
-        """Validate workflow paths and create necessary directories."""
-        # Validate input directories
-        print("  Validating model_files_folder...")
-        config_utils.check_directory_not_empty(self.config['model_files_folder'], "model_files_folder")
-        config_utils.check_nc_files_only(self.config['model_files_folder'], "model_files_folder")
-
-        print("  Validating obs_seq_in_folder...")
-        config_utils.check_directory_not_empty(self.config['obs_seq_in_folder'], "obs_seq_in_folder")
-
-        print("  Validating output_folder...")
-        config_utils.check_or_create_folder(self.config['output_folder'], "output_folder")
-
-        print("  Validating tmp_folder...")
-        config_utils.check_or_create_folder(self.config['tmp_folder'], "tmp_folder")
-
-        if trim_obs:
-            print("  Validating trimmed_obs_folder...")
-            trimmed_obs_folder = self.config.get('trimmed_obs_folder', 'trimmed_obs_seq')
-            self.config['trimmed_obs_folder'] = trimmed_obs_folder
-            config_utils.check_or_create_folder(trimmed_obs_folder, "trimmed_obs_folder")
-
-        # Set default backup folder
-        input_nml_bck = self.config.get('input_nml_bck', 'input.nml.backup')
-        self.config['input_nml_bck'] = input_nml_bck
-        
-        print("  Validating input_nml_bck...")
-        config_utils.check_or_create_folder(input_nml_bck, "input_nml_bck")
-
-        print("  Validating .nc files for model_nml...")
-        config_utils.check_nc_file(self.config['template_file'], "template_file")
-        config_utils.check_nc_file(self.config['static_file'], "static_file")
-        config_utils.check_nc_file(self.config['ocean_geometry'], "ocean_geometry")
     
     def _initialize_model_namelist(self) -> None:
         """Initialize model namelist parameters."""
@@ -255,9 +228,18 @@ class WorkflowModelObs(workflow.Workflow):
             "model_nml", "assimilation_period_seconds", self.config['time_window']['seconds'], string=False
         )
 
-        common_model_keys = ['template_file','static_file','ocean_geometry','model_state_variables','layer_name']
+        print(f'ocean model: {self.model_adapter.ocean_model}')
+        common_model_keys = self.model_adapter.get_common_model_keys()
         for key in self.config.keys():
-            if key in common_model_keys:
+            if key=='debug':
+                self._namelist.update_namelist_param(
+                    "model_nml", key, self.config[key],string=False
+                )
+            elif key=='variables':
+                self._namelist.update_namelist_param(
+                    "model_nml", key, self.config[key], dict_format='triplet'
+                )
+            elif key in common_model_keys:
                 self._namelist.update_namelist_param(
                     "model_nml", key, self.config[key]
                 )
@@ -292,14 +274,13 @@ class WorkflowModelObs(workflow.Workflow):
         
         for model_in_f in model_in_files:
             print(f"    Processing model file {model_in_f}...")
-            with xr.open_dataset(model_in_f, decode_times=False) as ds:
-                # Fix calendar as xarray does not read it consistently with ncviews
-                ds['time'].attrs['calendar'] = 'proleptic_gregorian'
-                ds = xr.decode_cf(ds, decode_timedelta=True)
-                snapshots_nb = ds.sizes['time']
+
+            with self.model_adapter.open_dataset_ctx(model_in_f) as ds:
+                time_var =  "time" # open_dataset_ctx() renames model time varname to 'time'
+                snapshots_nb = ds.sizes[time_var]
                 print(f"      model has {snapshots_nb} snapshots.")
                 
-                for t_id, time in enumerate(ds['time'].values):
+                for t_id, time in enumerate(ds[time_var].values):
                     print(f"      processing snapshot {t_id+1} of {snapshots_nb}...")
                     for obs_in_file in obs_in_files:
                         # Skip obs_seq.in files already used
@@ -332,8 +313,9 @@ class WorkflowModelObs(workflow.Workflow):
 
                             if snapshots_nb > 1:
                                 # Slice out the snapshot into a temporary file
+                                model_time_varname = self.model_adapter.time_varname
                                 ncks = [
-                                    "ncks", "-d", f"time,{t_id}",
+                                    "ncks", "-d", f"{model_time_varname},{t_id}",
                                     model_in_f, tmp_model_in_file
                                 ]
                                 print(f"        Calling {' '.join(ncks)}")
@@ -405,7 +387,7 @@ class WorkflowModelObs(workflow.Workflow):
         if not force_obs_time:
             # Assign time to model file
             print("          Retrieving model time from model input file and updating namelist...")
-            model_time_days, model_time_seconds = file_utils.get_model_time_in_days_seconds(model_in_file)
+            model_time_days, model_time_seconds = file_utils.get_model_time_in_days_seconds(model_in_file,self.model_adapter.time_varname)
             self._namelist.update_namelist_param(
                 "perfect_model_obs_nml", "init_time_days", model_time_days,
                 string=False
@@ -526,6 +508,9 @@ class WorkflowModelObs(workflow.Workflow):
         # Sort dataframe by time -> position -> depth
         sort_order = ['time', 'longitude', 'latitude', 'vertical']
         merged = merged.sort_values(by=sort_order)
+
+        # DART's pmo uses different units for MOM6 and ROMS_Rutgers
+        merged = self.model_adapter.convert_units(merged)
 
         # Add diagnostic columns
         merged['difference'] = merged['obs'] - merged[perf_model_col]

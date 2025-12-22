@@ -9,6 +9,7 @@ dependencies:
   - gsw<=3.6.20
   - ipykernel<=6.30.1
   - ipywidgets<=8.1.7
+  - jupyterlab
   - matplotlib<=3.10.6
   - netcdf4<=1.7.2
   - pandas<=2.3.3

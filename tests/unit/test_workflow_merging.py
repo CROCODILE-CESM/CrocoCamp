@@ -23,6 +23,7 @@ class TestMergePairToParquet:
     def workflow(self, tmp_path):
         """Create a WorkflowModelObs instance with minimal config."""
         config = {
+            'ocean_model': "mom6",
             'model_files_folder': str(tmp_path / "model"),
             'obs_seq_in_folder': str(tmp_path / "obs"),
             'output_folder': str(tmp_path / "output"),
@@ -413,6 +414,7 @@ class TestMergeModelObsToParquet:
         (obs_folder / "obs_seq_002.in").write_text("mock")
         
         config = {
+            'ocean_model': 'mom6',
             'model_files_folder': str(tmp_path / "model"),
             'obs_seq_in_folder': str(obs_folder),
             'output_folder': str(output_folder),
@@ -447,7 +449,9 @@ class TestMergeModelObsToParquet:
         
         assert mock_merge.call_count == 2
         captured = capsys.readouterr()
-        assert "Validating parquet_folder" in captured.out
+        assert "Total number of obs" in captured.out
+        assert "Succesfull interpolations" in captured.out
+        assert "Failed interpolations" in captured.out
     
     @patch('crococamp.workflows.workflow_model_obs.WorkflowModelObs._merge_pair_to_parquet')
     @patch('crococamp.workflows.workflow_model_obs.WorkflowModelObs._set_model_obs_df')
@@ -467,6 +471,7 @@ class TestMergeModelObsToParquet:
         (output_folder / "obs_seq_001.out").write_text("mock")
         
         config = {
+            'ocean_model': 'mom6',
             'model_files_folder': str(tmp_path / "model"),
             'obs_seq_in_folder': str(tmp_path / "obs"),
             'trimmed_obs_folder': str(trimmed_folder),
